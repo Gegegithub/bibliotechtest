@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  /* Palette épurée : vert foncé, gris clair, blanc */
+  .book-detail-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 100%;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+  }
+  .author-detail-title {
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    color: #2f4f4f;
+  }
+  .book-meta {
+    margin-top: 1.5rem;
+    color: #555;
+  }
+  .book-meta h5 {
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+  }
+  .description-text {
+    line-height: 1.6;
+    color: #333;
+    font-size: 1rem;
+  }
+  a.wikipedia-link {
+    color: #1E90FF;  
+    font-weight: normal;  
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  a.wikipedia-link:hover {
+    color: #104E8B;  
+    text-decoration: underline;
+  }
+
+  /* Bouton vert clair épuré pour "Ajouter aux favoris" plus fin et élégant */
+  .btn-vert-clair {
+    background-color: transparent;
+    color: #1e7d32;
+    border: none;
+    padding: 2px 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: color 0.25s ease;
+    min-width: auto;
+    height: 24px;
+    line-height: 1;
+    border-radius: 3px;
+    user-select: none;
+  }
+  .btn-vert-clair i {
+    font-size: 1rem;
+    line-height: 1;
+    transition: color 0.25s ease;
+  }
+  .btn-vert-clair:hover:not(:disabled) {
+    color: #145214;
+    text-decoration: underline;
+  }
+  .btn-vert-clair:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+</style>
+
+<div class="container py-5">
+  <main>
+
+    <a href="{% url 'catalogue' %}" style="color: #87CEEB; text-decoration: none; font-weight: normal; display: inline-flex; align-items: center; margin-bottom: 20px;">
+      <span style="font-size: 1.2em;">←</span>
+      <span style="margin-left: 5px;">Revenir au catalogue de catégorie</span>
+    </a>
+
+    <div class="row">
+      <!-- Image et infos basiques -->
+      <div class="col-md-5 d-flex flex-column align-items-center">
+        {% if livre.image %}
+          <img src="{{ livre.image.url }}" alt="{{ livre.titre }}" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px; object-fit: contain;">
+        {% else %}
+          <p>Aucune image disponible pour ce livre.</p>
+        {% endif %}
+      </div>
+
+      <!-- Description + Métadonnées -->
+      <div class="col-md-7 d-flex align-items-start">
+        <div class="book-detail-container">
+          <h4 class="author-detail-title">Détail sur l'auteur</h4>
+
+          {% if livre.description %}
+            <p class="description-text">{{ livre.description }}</p>
+            {% if wiki_url %}
+              <p><a href="{{ wiki_url }}" target="_blank" rel="noopener noreferrer" class="wikipedia-link">Cliquez ici pour voir la description complète.</a></p>
+            {% endif %}
+          {% else %}
+            <p><em>Aucune description disponible pour l'auteur de cet ouvrage.</em></p>
+          {% endif %}
+
+          <div class="book-meta">
+            <h5>Titre de l'œuvre :</h5>
+            <p>{{ livre.titre }}</p>
+
+            <h5>Numéro d'inventaire :</h5>
+            <p>{{ livre.numero_inventaire }}</p>
+
+            <h5>Ancien code :</h5>
+            <p>{{ livre.ancien_code|default:"Non disponible" }}</p>
+          </div>
+
+          <!-- Bouton Ajouter/Supprimer des favoris -->
+          <div class="mt-4">
+            {% if user.is_authenticated %}
+              {% if est_favori %}
+                <a href="{% url 'supprimer_favori' livre.id %}" class="btn btn-danger">
+                  Supprimer des favoris
+                </a>
+              {% else %}
+                <form id="favori-form" method="post" action="{% url 'ajouter_favori' livre.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" id="favori-btn" class="btn btn-vert-clair" title="Ajouter aux favoris" aria-live="polite" aria-atomic="true" aria-relevant="text">
+                    <i id="favori-icon" class="fa-regular fa-star" aria-hidden="true"></i>
+                    <span id="favori-text">Ajouter aux favoris</span>
+                  </button>
+                </form>
+              {% endif %}
+            {% else %}
+              <p><a href="{% url 'connexion' %}?next={{ request.path }}">Connectez-vous</a> pour ajouter ce livre aux favoris.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {% if autres_livres %}
+      <div class="mt-5">
+        <h2 class="mb-4 text-center" style="color: #006400;">Autres livres de la même catégorie</h2>
+        <div class="row">
+          {% for autre in autres_livres %}
+            <div class="col-md-3 mb-4">
+              <div class="card h-100 shadow-sm">
+                {% if autre.image %}
+                  <img src="{{ autre.image.url }}" class="card-img-top" alt="{{ autre.titre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                  <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background-color: #f0f0f0;">
+                    <span>Aucune image</span>
+                  </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ autre.titre }}</h5>
+                  <p class="card-text text-truncate">{{ autre.description }}</p>
+                  <a href="{% url 'detail_livre' categorie.id autre.id %}"
+                     class="btn btn-sm"
+                     style="background-color: transparent; color: #1e5b34; border: 1px solid #b6e6c5; border-radius: 10px; transition: background-color 0.3s, color 0.3s;">
+                    Consulter
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+document.getElementById('favori-form')?.addEventListener('submit', function(event) {
+  event.preventDefault();  // stop page reload
+
+  const form = this;
+  const url = form.action;
+  const csrftoken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  const btn = document.getElementById('favori-btn');
+  const icon = btn.querySelector('i');
+  const texte = btn.querySelector('span');
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json',
+    },
+    credentials: 'same-origin',
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Erreur réseau');
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      icon.classList.remove('fa-regular');
+      icon.classList.add('fa-solid');
+      icon.style.color = 'green';
+
+      texte.textContent = 'Ajouté';
+
+      btn.disabled = true;
+    } else {
+      alert(data.message || 'Erreur lors de l\'ajout aux favoris');
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    alert('Une erreur est survenue. Veuillez réessayer.');
+  });
+});
+</script>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header text-center">
+                    <i class="fas fa-user"></i> S'inscrire
+                </div>
+                <div class="card-body px-4">
+                    <form method="post">
+                        {% csrf_token %}
+        
+                        <div class="form-group mb-3">
+                            <input type="text" placeholder="Nom" name="nom" class="form-control">
+                        </div>
+                        <div class="form-group mb-3">
+                            <input type="text" placeholder="Prénom" name="prenom" class="form-control">
+                        </div>
+                        <div class="form-group mb-3">
+                            <input type="text" placeholder="email" name="email" class="form-control">
+                        </div>
+
+                        <!-- Champ mot de passe avec icône -->
+                        <div class="form-group mb-3 position-relative">
+                            <input type="password" placeholder="Mot de passe" name="password1" class="form-control" id="password1">
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" style="cursor: pointer;" onclick="togglePassword('password1', this)">
+                                <i class="far fa-eye"></i>
+                            </span>
+                        </div>
+
+                        <!-- Champ confirmer mot de passe avec icône -->
+                        <div class="form-group mb-4 position-relative">
+                            <input type="password" placeholder="Confirmer le mot de passe" name="password2" class="form-control" id="password2">
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" style="cursor: pointer;" onclick="togglePassword('password2', this)">
+                                <i class="far fa-eye"></i>
+                            </span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Suivant</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script pour afficher/masquer le mot de passe -->
+<script>
+function togglePassword(id, el) {
+    const input = document.getElementById(id);
+    const icon = el.querySelector('i');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
+}
+</script>
+{% endblock %}
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

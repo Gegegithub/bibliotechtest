@@ -1,0 +1,191 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Catalogue - Bibliothèque</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap / MDB CSS -->
+  <link href="{% static 'css/mdb.min.css' %}" rel="stylesheet" />
+
+<style>
+  .card-img-top {
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .hero-catalogue {
+    position: relative;
+    background-image: url('{% static "img/Société.jpg" %}');
+    background-size: cover;
+    background-position: center;
+    min-height: 60vh;
+    padding: 100px 0 60px;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+    transition: background-image 1s ease-in-out;
+  }
+
+  /* --- VOILE ROUGE TRANSPARENT --- */
+  .hero-catalogue::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(130, 45, 40, 0.90); /* Rouge quasi opaque */
+    z-index: 1;
+}
+
+  .hero-catalogue .container {
+    position: relative;
+    z-index: 2; /* texte au-dessus du voile */
+  }
+
+  .hero-catalogue h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+  }
+
+  .hero-catalogue p {
+    font-size: 1.3rem;
+    color: #e3e3e3;
+    margin-top: 1rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+  }
+
+  .catalogue-section {
+    margin-top: 70px;
+    z-index: 2;
+    position: relative;
+  }
+
+  .btn-noir {
+  background-color: #000000; /* noir */
+  color: white;
+  border: none;
+  padding: 6px 12px; /* réduit la taille */
+  font-size: 0.875rem; /* texte plus petit */
+  border-radius: 6px;
+}
+
+.btn-noir:hover {
+  background-color: #222222; /* noir un peu plus clair au survol */
+}
+</style>
+
+</head>
+
+<body>
+  <header>
+    {% include '_nav.html'%}
+  </header>
+
+  <!-- HERO section avec animation -->
+ <section class="hero-catalogue">
+  <div class="container">
+    <h1>Explorez nos différentes catégories</h1>
+  </div>
+</section>
+
+<!-- Texte entre Hero et Catalogue -->
+<section class="intro-catalogue-text text-center my-4">
+  <div class="container">
+    <p style="font-weight: bold; font-size: 1.25rem; color: #111;">
+      Découvrez une large sélection d’ouvrages spécialisés, prêts à enrichir vos connaissances.
+    </p>
+  </div>
+</section>
+
+
+  <!-- Catalogue -->
+  <main class="catalogue-section pb-5">
+    <div class="container mt-5">
+      <!-- ❌ SUPPRESSION DU TITRE "Notre catalogue" -->
+      <div class="row">
+        {% for categorie in list_categories %}
+          <div class="col-md-4 d-flex align-items-stretch mb-4">
+            <div class="card shadow w-100 d-flex flex-column">
+              {% if categorie.image %}
+                <img src="{{ categorie.image.url }}" class="card-img-top" alt="{{ categorie.nom }}">
+              {% else %}
+                <img src="{% static 'images/default_category.jpg' %}" class="card-img-top" alt="Image par défaut">
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ categorie.nom }}</h5>
+                <p class="card-text">Nombre de livres : {{ categorie.nombre_livres }}</p>
+                <div class="mt-auto">
+             <a href="{% url 'details_categorie' categorie.id %}" 
+   class="btn btn-noir">
+  Voir les livres
+</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
+
+  {% include '_footer.html' %}
+
+  <!-- Scripts -->
+  <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/popper.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/mdb.umd.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/script.js' %}"></script>
+
+  <!-- Script pour changer le fond dynamiquement -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const images = [
+        '/static/img/agriculture.jpg',
+        '/static/img/bancaire.jpg',
+        '/static/img/Commerce.jpg',
+        '/static/img/Développement.jpg',
+        '/static/img/droit.jpg',
+        '/static/img/economie.jpg',
+        '/static/img/Export.jpg',
+        '/static/img/gestion.jpg',
+        '/static/img/histoire.jpg',
+        '/static/images/Impots.jpg',
+        '/static/img/politique.jpg',
+        '/static/img/Recherche.jpg',
+        '/static/img/richesse.jpg',
+        '/static/img/technologie.jpg',
+        '/static/img/Société.webp',
+      ];
+
+      if (images.length === 0) return;
+
+      const hero = document.querySelector('.hero-catalogue');
+      let index = 0;
+
+      function changeBackground() {
+        hero.style.transition = 'background-image 1s ease-in-out';
+        hero.style.backgroundImage = `url('${images[index]}')`;
+        index = (index + 1) % images.length;
+      }
+
+      changeBackground();
+      setInterval(changeBackground, 8000);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

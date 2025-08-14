@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container" style="padding-top: 80px; padding-bottom: 100px;">
+  <h2 class="mb-4">Résultats pour "{{ query|escape }}"</h2>
+
+  {% if livres %}
+    <div class="row gx-4 gy-4">
+      {% for livre in livres %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="card h-100">
+            {% if livre.image %}
+              <img src="{{ livre.image.url }}" class="card-img-top" alt="Image de {{ livre.titre }}">
+            {% else %}
+              <img src="{% static 'images/default_book.jpg' %}" class="card-img-top" alt="Image par défaut">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">{{ livre.titre }}</h5>
+              <p class="card-text">{{ livre.auteur }}</p>
+              <p class="card-text text-muted" style="font-size: 0.85rem;">
+                Publié le : {{ livre.date_publication|date:"d/m/Y" }}
+              </p>
+              {% if livre.categorie %}
+                       <a href="{% url 'detail_livre' livre.categorie.id livre.id %}"
+   class="btn btn-sm"
+   style="background-color: transparent; color: #1e5b34; border: 1px solid #b6e6c5; border-radius: 10px; transition: background-color 0.3s, color 0.3s;">
+   Consulter
+</a>
+              {% else %}
+                <a href="#" class="btn btn-secondary disabled mt-auto">Catégorie inconnue</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Aucun livre trouvé pour votre recherche.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+

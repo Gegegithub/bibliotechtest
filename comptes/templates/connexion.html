@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  /* Boutons bleus (btn-primary) recolorisés en vert pastel */
+  .btn-primary {
+    background-color: #A8D5BA !important; /* vert pastel */
+    border-color: #A8D5BA !important;
+    color: #1E3D31 !important; /* texte vert foncé */
+    box-shadow: none !important; /* supprime l'ombre */
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: #7CBF9E !important; /* vert plus foncé */
+    border-color: #7CBF9E !important;
+    color: #fff !important; /* texte blanc */
+    box-shadow: none !important; /* pas d'ombre au survol */
+  }
+
+  /* Liens verts pastels */
+  a.text-decoration-none,
+  a.small {
+    color: #A8D5BA;
+    transition: color 0.3s ease;
+    text-decoration: none;
+  }
+  a.text-decoration-none:hover,
+  a.small:hover {
+    color: #7CBF9E;
+    text-decoration: underline;
+  }
+</style>
+
+</style>
+
+</style>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh; padding-bottom: 60px; flex-direction: column;">
+  {# Bloc message centré au-dessus de la carte #}
+  {% if messages %}
+    <div class="mb-4 w-100" style="max-width: 420px; text-align: center;">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card shadow p-4" style="max-width: 420px; width: 100%; border-radius: 16px;">
+    <h3 class="card-title text-center mb-4" style="font-weight: 600;">Connexion à BiblioTECH</h3>
+
+    <form method="post" novalidate action="?next={{ request.GET.next }}">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Adresse email</label>
+        <input type="email" name="username" class="form-control" id="id_username" required placeholder="">
+      </div>
+
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Mot de passe</label>
+        <input type="password" name="password" class="form-control" id="id_password" required placeholder="">
+      </div>
+
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+      </div>
+
+      <div class="text-center">
+        <a href="{% url 'password_reset' %}" class="text-decoration-none small">Mot de passe oublié ?</a>
+      </div>
+
+      <div class="text-center mt-2">
+        <span class="small">Pas encore inscrit ?</span>
+        <a href="{% url 'inscription' %}" class="text-decoration-none small">Créer un compte</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+

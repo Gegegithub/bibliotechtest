@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block styles %}
+<style>
+  h2 {
+    font-size: 2.5rem;
+    color: #14532d; /* Vert foncé */
+    font-weight: bold;
+  }
+
+  h4 {
+    font-size: 1.8rem;
+    color: #14532d; /* Vert foncé */
+    font-weight: 600;
+  }
+
+  p, li {
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+
+  /* Animation zoom au survol pour toutes les images */
+  img.img-fluid {
+    transition: transform 0.4s ease;
+  }
+
+  img.img-fluid:hover {
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %}
+
+
+
+
+{% block content %}
+<div class="container py-5">
+  <h2 class="text-center mb-10">Bienvenue au cœur du savoir et de l’inspiration !</h2>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h4>Notre mission</h4>
+      <p>
+ Véritable carrefour du savoir et de l’innovation, la bibliothèque de la CCISCS a pour ambition de devenir un acteur clé dans la diffusion de la connaissance économique, juridique et entrepreneuriale.
+
+
+Pensée pour accompagner aussi bien les professionnels que les étudiants, chercheurs et entrepreneurs de la région, elle offre un accès privilégié à une collection riche et diversifiée de documents spécialisés.
+
+Notre mission est simple mais essentielle : favoriser l’accès à l’information stratégique et soutenir le développement des compétences au service de la croissance régionale.
+
+À travers ses services de consultation, de veille documentaire et d’accompagnement, la bibliothèque s’engage à stimuler la réflexion, encourager l’apprentissage continu et appuyer les prises de décision éclairées.
+
+Bienvenue dans un espace où chaque page peut inspirer un projet, chaque ressource peut déclencher une idée, et chaque lecture peut construire l’avenir.
+      </p>
+    </div>
+    <div class="col-md-6">
+      <img src="{% static 'img/Notre mission.jpg' %}" alt="Bibliothèque" class="img-fluid rounded shadow" />
+    </div>
+  </div>
+
+  <hr class="my-5" />
+
+  <div class="row">
+    <div class="col-md-6">
+      <img src="{% static 'img/notre equipe.jpg' %}" alt="Équipe" class="img-fluid rounded shadow" />
+    </div>
+    <div class="col-md-6">
+      <h4>Notre équipe</h4>
+      <p>
+        Une équipe passionnée et dynamique vous accueille pour vous orienter dans vos recherches :
+      </p>
+      <ul>
+        <li>Mme Fatima Zohra – Bibliothécaire principale</li>
+        <li>M. Rachid El Idrissi – Archiviste</li>
+        <li>Mlle Sarah Benali – Assistante numérique</li>
+      </ul>
+    </div>
+  </div>
+
+<hr class="my-5" />
+
+<div class="row align-items-center">
+  <!-- Texte à gauche -->
+  <div class="col-md-6">
+    <h4 style="color: #064420; font-weight: bold;">Nos richesses documentaires</h4>
+    <p>
+      La bibliothèque regroupe plus de <strong>5000 ouvrages</strong> dans les domaines de :
+    </p>
+    <ul>
+      <li>Commerce international</li>
+      <li>Économie et finance</li>
+      <li>Droit des affaires</li>
+      <li>Entrepreneuriat au Maroc</li>
+      <li>Archives historiques régionales</li>
+    </ul>
+  </div>
+
+  <!-- Image à droite -->
+  <div class="col-md-6 mb-4 mb-md-0">
+    <img src="{% static 'img/richesse.jpg' %}" alt="Richesse documentaire" class="img-fluid rounded shadow" />
+  </div>
+</div>
+
+<div class="text-center mt-5">
+   <a href="{% url 'catalogue' %}" class="btn btn-outline-lightgreen btn-lg mt-4">Explorez notre catalogue</a>
+</div>
+
+{% endblock %}

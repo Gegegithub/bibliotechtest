@@ -1,0 +1,275 @@
+body {
+  background-color: #ffffff; /* fond blanc */
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+h2, h4 {
+  color: #145A32; /* vert foncé professionnel */
+  font-weight: bold;
+}
+
+p, ul li {
+  font-size: 1.05rem;
+  color: #555; /* gris légèrement foncé pour une bonne lisibilité */
+  line-height: 1.6;
+}
+
+.img-fluid {
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.img-fluid:hover {
+  transform: scale(1.03);
+}
+
+.row {
+  margin-bottom: 50px;
+}
+
+/* Décalage pour contenu sous navbar fixe */
+.content-wrapper {
+  padding-top: 80px; /* ajuster selon la hauteur de la navbar fixe */
+}
+
+h1 {
+  color: #343a40;
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Cartes */
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+/* Image dans les cartes */
+.card-img-top {
+  height: 180px;
+  object-fit: cover;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+/* Contenu des cartes */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 1rem;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.card-text {
+  flex-grow: 0;
+  font-size: 0.95rem;
+  color: #6c757d;
+}
+
+.btn {
+  margin-top: auto;
+}
+
+/* Responsive pour navbar */
+@media (max-width: 991px) {
+  .navbar-scroll {
+    background-color: #fff;
+  }
+  
+  .navbar-scroll .navbar-brand,
+  .navbar-scroll .nav-link,
+  .navbar-scroll .fa-bars {
+    color: #4f4f4f !important;
+  }
+}
+
+.navbar-brand {
+  letter-spacing: 3px;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.navbar-scroll .navbar-brand,
+.navbar-scroll .nav-link,
+.navbar-scroll .fa-bars {
+  color: #fff;
+}
+
+.navbar-scroll {
+  box-shadow: none;
+}
+
+.navbar-scrolled {
+  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.05);
+}
+
+.navbar-scrolled .navbar-brand,
+.navbar-scrolled .nav-link,
+.navbar-scrolled .fa-bars {
+  color: #4f4f4f;
+}
+
+.navbar-scrolled {
+  background-color: #fff;
+}
+
+@media (max-width: 450px) {
+  #intro {
+    height: 950px !important;
+  }
+}
+
+@media (min-width: 550px) and (max-width: 750px) {
+  #intro {
+    height: 1100px !important;
+  }
+}
+
+@media (min-width: 800px) and (max-width: 990px) {
+  #intro {
+    height: 600px !important;
+  }
+}
+
+.display-1 {
+  font-weight: 500 !important;
+  letter-spacing: 40px;
+}
+
+@media (min-width: 1600px) {
+  .display-1 {
+    font-size: 10rem;
+  }
+}
+
+/* Navbar personnalisée */
+.navbar {
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.4rem;
+  color: #343a40;
+}
+
+.nav-link {
+  color: #343a40 !important;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #0d6efd !important;
+}
+
+/* Fond vert foncé pour le footer */
+.bg-darkgreen {
+  background-color: #064635 !important; /* Vert foncé */
+}
+
+/* Garder la couleur blanche pour le texte et tableau */
+footer.text-white {
+  color: #fff;
+}
+
+/* Optionnel : pour que le tableau soit bien visible */
+footer table {
+  background-color: transparent; /* garde fond transparent */
+  color: white !important;
+}
+
+/* Les boutons sociaux, on peut garder la couleur bootstrap primaire ou personnaliser */
+.btn-floating.btn-primary {
+  background-color: #0d6efd; /* bleu bootstrap par défaut */
+  color: white;
+}
+
+/* Supprime la limitation de largeur (supprimé container global) */
+/* Le footer prendra toute la largeur de la page */
+
+#suggestions-list {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  background: white;
+  display: none;
+}
+
+#suggestions-list a.list-group-item:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+.hero {
+  position: relative;
+  background-image: url('/static/img/background.jpg'); /* image principale fixe */
+  background-size: cover;
+  background-position: center;
+  padding: 100px 0;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Contenu au-dessus */
+.hero > .container {
+  position: relative;
+  z-index: 2; /* plus haut que overlays */
+}
+
+/* Overlays avec animation fade in/out */
+.hero::before,
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  animation-duration: 10s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero::before {
+  background-image: url('/static/img/background1.jpg');
+  animation-name: fadeInOut1;
+  animation-delay: 0s;
+}
+
+.hero::after {
+  background-image: url('/static/img/background2.jpg');
+  animation-name: fadeInOut2;
+  animation-delay: 5s;
+}
+
+/* Animation pour fade-in/fade-out alternés */
+@keyframes fadeInOut1 {
+  0%, 40% { opacity: 1; }
+  60%, 100% { opacity: 0; }
+}
+
+@keyframes fadeInOut2 {
+  0%, 40% { opacity: 0; }
+  60%, 100% { opacity: 1; }
+}
+
