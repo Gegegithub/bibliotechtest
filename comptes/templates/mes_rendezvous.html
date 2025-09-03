@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4 text-center">Mes rendez-vous</h2>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table align-middle mb-0" style="background-color: #fff;">
+            <thead>
+                <tr>
+                    <th scope="col">Ouvrage demandé</th>
+                    <th scope="col">Catégorie de l'ouvrage</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rdv in rdvs %}
+                <tr>
+                    <!-- Correction : on prend directement les infos depuis la ForeignKey "livre" -->
+                    <td>{{ rdv.livre.titre }}</td>
+                    <td>{{ rdv.livre.categorie.nom }}</td>
+                    <td>{{ rdv.date_souhaitee|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if rdv.statut == "confirme" %}
+                            <span class="badge bg-success">Confirmé</span>
+                        {% elif rdv.statut == "en_attente" %}
+                            <span class="badge bg-warning text-dark">En attente</span>
+                        {% elif rdv.statut == "annule" %}
+                            <span class="badge bg-danger">Annulé</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ rdv.statut }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Vous n'avez pris aucun rendez-vous pour l'instant.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+

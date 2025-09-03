@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Rapport du Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { text-align: center; }
+        .kpi { margin-bottom: 15px; }
+        .kpi span { font-weight: bold; font-size: 18px; }
+        .section { margin-top: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Rapport du Dashboard</h2>
+
+    <div class="section">
+        <h3>Usagers actifs</h3>
+        <div class="kpi">Nombre total : <span>{{ total_usagers_actifs }}</span></div>
+    </div>
+
+    <div class="section">
+        <h3>Rendez-vous aujourd'hui</h3>
+        <div class="kpi">Nombre : <span>{{ flux_journalier|length }}</span></div>
+    </div>
+
+    <div class="section">
+        <h3>Top Livres</h3>
+        <table>
+            <tr><th>Livre</th><th>Emprunts</th></tr>
+            {% for livre in top_livres %}
+            <tr>
+                <td>{{ livre.livre__titre }}</td>
+                <td>{{ livre.nb_emprunts }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Usagers par type</h3>
+        <table>
+            <tr><th>Type</th><th>Nombre</th></tr>
+            {% for u in usagers_par_type %}
+            <tr>
+                <td>{{ u.type_utilisateur }}</td>
+                <td>{{ u.count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</body>
+</html>

@@ -1,13 +1,118 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Prendre rendez-vous</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-success">Envoyer</button>
-    </form>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card rounded-4" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4" style="font-weight: 700; color: #1e5b34;">Prendre rendez-vous</h2>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Champ Ouvrage -->
+                        <div class="mb-4 position-relative">
+                            {{ form.livre_titre.label_tag }}
+                            {{ form.livre_titre|add_class:"form-control rounded-pill border-1" }}
+                            
+                            <!-- Message d'indisponibilité -->
+                            {% if message_indispo %}
+                                <div class="text-danger mt-2 d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <span>{{ message_indispo }}</span>
+                                </div>
+                            {% endif %}
+
+                            <!-- Bouton moderne transparent pour dérouler la liste des livres similaires -->
+                            {% if livres_similaires %}
+                                <button class="btn btn-outline-dark btn-sm mt-2 d-flex align-items-center justify-content-between w-100"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#livresSimilaires"
+                                        aria-expanded="false"
+                                        aria-controls="livresSimilaires"
+                                        style="background: transparent; color: #212529; border: 1px solid #212529; font-weight: 500; 
+                                               transition: all 0.3s ease; padding: 0.45rem 0.9rem; border-radius: 0.5rem;">
+                                    <span>Voir les ouvrages disponibles</span>
+                                    <i class="bi bi-chevron-down ms-2"></i>
+                                </button>
+                                <div class="collapse mt-2" id="livresSimilaires">
+                                    <ul class="list-group list-group-flush border rounded">
+                                        {% for livre in livres_similaires %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                                {{ livre.titre }}
+                                                <span class="badge bg-secondary rounded-pill">{{ livre.numero_inventaire }}</span>
+                                            </li>
+                                        {% empty %}
+                                            <li class="list-group-item p-2 text-center" 
+                                                style="background-color: #f8f9fa; color: #212529; font-weight: 500; font-style: italic;">
+                                                Aucun ouvrage alternatif disponible.
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+
+                            {% for error in form.livre_titre.errors %}
+                                <div class="text-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Les autres champs du formulaire -->
+                        {% for field in form %}
+                            {% if field.name != 'livre_titre' %}
+                                <div class="mb-4">
+                                    {{ field.label_tag }}
+                                    {{ field|add_class:"form-control rounded-pill border-1" }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-success w-100 py-2 rounded-pill" 
+                                style="font-weight: 600; transition: all 0.3s ease;">
+                            Envoyer
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

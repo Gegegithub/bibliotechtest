@@ -22,29 +22,28 @@
   <link rel="stylesheet" href="{% static 'css/style.css' %}" />
 
   <style>
+/* Hero */
 .hero {
   position: relative;
   background-image: url('/static/img/background.jpg');
   background-size: cover;
   background-position: center;
-  min-height: 40vh;          /* Réduit la hauteur minimale */
-  padding: 100px 0;          /* Réduit l'espace intérieur (haut/bas) */
+  min-height: 40vh;          
+  padding: 100px 0;          
   color: white;
   text-align: center;
   overflow: hidden;
   filter: brightness(0.85);
+  z-index: 1; /* Ajout pour s'assurer que hero reste derrière le contenu */
 }
 
 .hero h1 {
-  color: #ffffff !important;  /* blanc pur */
+  color: #ffffff !important;  
 }
 
 .hero p {
-  color: #e3e3e3ff !important;  /* gris clair */
+  color: #e3e3e3ff !important;  
 }
-
-
-
 
 .hero > .container {
   position: relative;
@@ -70,7 +69,6 @@
   transition: opacity 2s ease-in-out, transform 2s ease-in-out;
 }
 
-/* Animation avec effet de zoom et fondu centrés */
 .hero::before {
   background-image: url('/static/img/background1.jpg');
   animation-name: fadeInOut1;
@@ -97,7 +95,7 @@
 
 .btn-outline-lightgreen {
   background-color: transparent;
-  color: #66cc99; /* vert pastel doux */
+  color: #66cc99;
   border: 2px solid #66cc99;
   border-radius: 6px;
   font-weight: 600;
@@ -111,7 +109,12 @@
   text-decoration: none;
 }
 
+/* ✅ Correction pour éviter que le contenu soit caché par la navbar fixe */
+main {
+  margin-top: 80px; /* Ajuste selon la hauteur de ta navbar */
+}
 </style>
+
  {% block styles %}{% endblock %}
 </head>
 
@@ -119,9 +122,8 @@
 
   {% include '_nav.html' %}
 
-  <!-- Hero Section (page d'accueil uniquement) -->
-  {% if request.path == '/' %}
-  <section class="hero">
+ {% if request.resolver_match.url_name == 'accueil' %}
+<section class="hero">
     <div class="container">
       <h1>Plongez dans l’univers du savoir avec la bibliothèque numérique de la CCISCS</h1>
       <p>La plateforme moderne de gestion et de consultation des ouvrages de la bibliothèque de la CCISCS.</p>
@@ -133,30 +135,12 @@
   {% endif %}
 
   <main class="container mt-5 pt-4">
-
-    <!-- Affichage des messages -->
-  <!-- 
-{% if messages %}
-  <div aria-live="polite">
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
--->
-
     {% block content %}{% endblock %}
   </main>
 
   {% include '_footer.html' %}
 
-<!-- Scripts -->
-<!-- JQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-<!-- Bootstrap JS (avec Popper.js intégré) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
 <script>
@@ -166,9 +150,7 @@
       if (query.length > 1) {
         $.ajax({
           url: '{% url "autocomplete" %}',
-          data: {
-            'term': query
-          },
+          data: { 'term': query },
           dataType: 'json',
           success: function (data) {
             $('#suggestions').empty();
@@ -184,14 +166,27 @@
       }
     });
 
-    // Cliquer sur une suggestion
     $(document).on('click', '.suggestion-item', function () {
       $('#search').val($(this).text());
       $('#suggestions').empty();
-      $('form').submit();  // optionnel : déclenche la recherche automatiquement
+      $('form').submit();
+    });
+
+    // ---- Correction : toujours revenir en haut après navigation ----
+    window.addEventListener('pageshow', function () {
+      window.scrollTo(0, 0);
+    });
+
+    // Pour les clics sur Accueil ou logo
+    document.querySelectorAll('a[href="/"]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        window.scrollTo(0, 0);
+      });
     });
   });
 </script>
 
+
 </body>
 </html>
+

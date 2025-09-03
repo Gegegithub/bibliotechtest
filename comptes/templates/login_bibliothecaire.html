@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-sm p-4" style="max-width: 400px; width: 100%; border-radius: 12px; border: 1px solid #dee2e6; background-color: #ffffff;">
+        <h2 class="text-center mb-4 fw-light" style="letter-spacing: 1px; color: #212529;">Connexion Bibliothécaire</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_username" class="form-label fw-semibold text-dark">Nom d'utilisateur</label>
+                <input type="text" name="username" id="id_username" class="form-control border-dark-subtle" required>
+            </div>
+            <div class="mb-3">
+                <label for="id_password" class="form-label fw-semibold text-dark">Mot de passe</label>
+                <input type="password" name="password" id="id_password" class="form-control border-dark-subtle" required>
+            </div>
+            <button type="submit" class="btn btn-dark w-100 py-2 text-uppercase fw-semibold mt-2">Se connecter</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #212529;
+    }
+    .border-dark-subtle {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+    }
+    .btn-dark {
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .btn-dark:hover {
+        background-color: #343434;
+        transform: translateY(-1px);
+    }
+    .card {
+        transition: box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    .card:hover {
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+

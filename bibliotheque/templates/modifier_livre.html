@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="card shadow p-4" style="border-radius: 12px; max-width: 600px; margin: auto; background-color: #ffffff;">
+    <h3 class="text-center mb-4" style="font-weight: bold; color: #111111; font-size: 1.75rem;">
+      Modifier le livre : {{ livre.titre }}
+    </h3>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label" style="font-weight: 500; color: #111111;">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger mt-1">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'details_categorie' livre.categorie.id %}" 
+           class="btn" 
+           style="background-color: transparent; color: black; border: 1px solid black; border-radius: 6px; padding: 6px 18px;">
+          Annuler
+        </a>
+        <button type="submit" 
+                class="btn" 
+                style="background-color: black; color: white; border-radius: 6px; padding: 6px 18px;">
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

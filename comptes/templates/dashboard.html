@@ -1,0 +1,201 @@
+{% extends "base.html" %} 
+{% block content %}
+<div class="container py-5">
+
+    <!-- 🔹 Titre et bouton -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-light m-0">Tableau de bord</h2>
+        <a href="{% url 'rapport_pdf' %}" class="btn btn-dark btn-sm shadow-sm" target="_blank" style="color:white; border-radius:6px; padding:0.5rem 1rem;">
+            Télécharger le rapport PDF
+        </a>
+    </div>
+
+    <!-- 🔹 Cartes KPI -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card text-dark bg-light shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-people-fill fs-2 me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Usagers actifs</h5>
+                        <p class="card-text fs-4">{{ total_usagers_actifs }}</p>
+                        <small class="text-muted">Nombre d'usagers ayant effectué au moins un rendez-vous.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-dark bg-light shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-calendar-check-fill fs-2 me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Rendez-vous aujourd'hui</h5>
+                        <p class="card-text fs-4">{{ flux_journalier|length }}</p>
+                        <small class="text-muted">Nombre de rendez-vous prévus pour aujourd'hui.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-dark bg-light shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-clock-fill fs-2 me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Durée moyenne (min)</h5>
+                        <p class="card-text fs-4">{{ avg_duree }}</p>
+                        <small class="text-muted">Durée moyenne des rendez-vous aujourd'hui.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-dark bg-light shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-x-circle-fill fs-2 me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Rendez-vous annulés/non présents</h5>
+                        <p class="card-text fs-4">{{ rdv_non_honores }}</p>
+                        <small class="text-muted">Rendez-vous annulés ou non honorés récemment.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Graphiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-bar-chart-fill me-2"></i>Rendez-vous par catégorie</h5>
+                    <canvas id="categoriesChart" height="250"></canvas>
+                    <small class="text-muted d-block mt-2">Répartition des rendez-vous selon les catégories de livres.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-calendar2-week-fill me-2"></i>Rendez-vous par jour (7 derniers jours)</h5>
+                    <canvas id="rdvPerDayChart" height="250"></canvas>
+                    <small class="text-muted d-block mt-2">Évolution du nombre de rendez-vous sur la semaine passée.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Top Livres -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-book-half me-2"></i>Livres les plus populaires</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for livre in top_livres %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <i class="bi bi-book me-2"></i>{{ livre.livre__titre }}
+                            <span class="badge bg-primary rounded-pill">{{ livre.nb_emprunts }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <small class="text-muted d-block mt-2">Ces livres ont été les plus empruntés récemment.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-journal-x me-2"></i>Livres peu empruntés</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for livre in livres_peu_empruntes %}
+                        <li class="list-group-item"><i class="bi bi-book me-2"></i>{{ livre.titre }} ({{ livre.nb_rdv }} emprunts)</li>
+                        {% endfor %}
+                    </ul>
+                    <small class="text-muted d-block mt-2">Ces livres sont rarement empruntés par les usagers.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Taux d’occupation par catégorie -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-12">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body d-flex justify-content-center">
+                    <div style="width: 50%; max-width: 400px;">
+                        <h5 class="card-title mb-3 text-center"><i class="bi bi-pie-chart-fill me-2"></i>Taux d’occupation par catégorie</h5>
+                        <canvas id="occupationChart" height="250"></canvas>
+                        <small class="text-muted d-block text-center mt-2">Proportion des rendez-vous par catégorie de livres.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Usagers par type -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-12">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-person-lines-fill me-2"></i>Usagers par type</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for u in usagers_par_type %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <i class="bi bi-person-fill me-2"></i>{{ u.type_utilisateur }}
+                            <span class="badge bg-secondary rounded-pill">{{ u.count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <small class="text-muted d-block mt-2">Répartition des usagers selon leur type.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const categoriesData = {
+        labels: [{% for c in taux_occupation_categorie %}"{{ c.categorie }}",{% endfor %}],
+        datasets: [{ label: 'Pourcentage', data: [{% for c in taux_occupation_categorie %}{{ c.pourcentage }},{% endfor %}], backgroundColor: 'rgba(54,162,235,0.7)' }]
+    };
+
+    const rdvPerDayData = {
+        labels: [{% for d in flux_semaine %}"{{ d.day }}",{% endfor %}],
+        datasets: [{ label: 'Nombre de rendez-vous', data: [{% for d in flux_semaine %}{{ d.count }},{% endfor %}], backgroundColor: 'rgba(255,159,64,0.7)' }]
+    };
+
+    const occupationData = {
+        labels: [{% for c in taux_occupation_categorie %}"{{ c.categorie }}",{% endfor %}],
+        datasets: [{ data: [{% for c in taux_occupation_categorie %}{{ c.pourcentage }},{% endfor %}], backgroundColor: ['#36A2EB','#FF6384','#FFCE56','#4BC0C0','#9966FF','#FF9F40'] }]
+    };
+
+    const options = { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } };
+
+    new Chart(document.getElementById('categoriesChart'), { type: 'bar', data: categoriesData, options: options });
+    new Chart(document.getElementById('rdvPerDayChart'), { type: 'line', data: rdvPerDayData, options: options });
+    new Chart(document.getElementById('occupationChart'), { type: 'pie', data: occupationData });
+</script>
+
+<style>
+    h2 { font-weight: 300; letter-spacing: 0.3px; }
+    .card-title { font-weight: 500; }
+    .card-text { font-weight: 600; }
+    canvas { max-width: 100%; }
+    .btn-dark:hover { background-color: #000; color: #fff; }
+</style>
+{% endblock %}
+
+
+
+
+
+
+

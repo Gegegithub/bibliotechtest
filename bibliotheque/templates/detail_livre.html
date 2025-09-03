@@ -97,12 +97,15 @@
         <div class="book-detail-container">
           <h4 class="author-detail-title">Détail sur l'auteur</h4>
 
-          {% if livre.description %}
-            <p class="description-text">{{ livre.description }}</p>
-            {% if wiki_url %}
-              <p><a href="{{ wiki_url }}" target="_blank" rel="noopener noreferrer" class="wikipedia-link">Cliquez ici pour voir la description complète.</a></p>
-            {% endif %}
-          {% else %}
+        {% if description %}
+    <p class="description-text">{{ description }}</p>
+    {% if wiki_url %}
+      <p><a href="{{ wiki_url }}" target="_blank" rel="noopener noreferrer" class="wikipedia-link">
+        Cliquez ici pour voir la description complète.
+      </a></p>
+    {% endif %}
+{% else %}
+
             <p><em>Aucune description disponible pour l'auteur de cet ouvrage.</em></p>
           {% endif %}
 
@@ -117,25 +120,37 @@
             <p>{{ livre.ancien_code|default:"Non disponible" }}</p>
           </div>
 
-          <!-- Bouton Ajouter/Supprimer des favoris -->
-          <div class="mt-4">
-            {% if user.is_authenticated %}
-              {% if est_favori %}
-                <a href="{% url 'supprimer_favori' livre.id %}" class="btn btn-danger">
-                  Supprimer des favoris
-                </a>
+          <!-- Boutons favoris et rendez-vous -->
+          <div class="mt-4 d-flex align-items-center justify-content-between">
+            <div>
+              {% if user.is_authenticated %}
+                {% if est_favori %}
+                  <a href="{% url 'supprimer_favori' livre.id %}" class="btn btn-danger">
+                    Supprimer des favoris
+                  </a>
+                {% else %}
+                  <form id="favori-form" method="post" action="{% url 'ajouter_favori' livre.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" id="favori-btn" class="btn btn-vert-clair" title="Ajouter aux favoris" aria-live="polite" aria-atomic="true" aria-relevant="text">
+                      <i id="favori-icon" class="fa-regular fa-star" aria-hidden="true"></i>
+                      <span id="favori-text">Ajouter aux favoris</span>
+                    </button>
+                  </form>
+                {% endif %}
               {% else %}
-                <form id="favori-form" method="post" action="{% url 'ajouter_favori' livre.id %}" style="display:inline;">
-                  {% csrf_token %}
-                  <button type="submit" id="favori-btn" class="btn btn-vert-clair" title="Ajouter aux favoris" aria-live="polite" aria-atomic="true" aria-relevant="text">
-                    <i id="favori-icon" class="fa-regular fa-star" aria-hidden="true"></i>
-                    <span id="favori-text">Ajouter aux favoris</span>
-                  </button>
-                </form>
+                <p><a href="{% url 'connexion' %}?next={{ request.path }}">Connectez-vous</a> pour ajouter ce livre aux favoris.</p>
               {% endif %}
-            {% else %}
-              <p><a href="{% url 'connexion' %}?next={{ request.path }}">Connectez-vous</a> pour ajouter ce livre aux favoris.</p>
-            {% endif %}
+            </div>
+
+            <div>
+              {% if user.is_authenticated and not est_bibliothecaire and not user.is_staff and not user.is_superuser %}
+                <a href="{% url 'rendez_vous' %}" 
+                   class="btn"
+                   style="background-color: transparent; color: black; border: 1px solid black; border-radius: 5px;">
+                  Prenez rendez-vous ici pour consulter cet ouvrage.
+                </a>
+              {% endif %}
+            </div>
           </div>
 
         </div>
@@ -221,6 +236,7 @@ document.getElementById('favori-form')?.addEventListener('submit', function(even
 </script>
 
 {% endblock %}
+
 
 
 
