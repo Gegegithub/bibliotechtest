@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
 {% block content %}
 <style>
@@ -32,10 +33,6 @@
   }
 </style>
 
-</style>
-
-</style>
-
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh; padding-bottom: 60px; flex-direction: column;">
   {# Bloc message centré au-dessus de la carte #}
   {% if messages %}
@@ -64,23 +61,30 @@
       {% endif %}
 
       <div class="mb-3">
-        <label for="id_username" class="form-label">Adresse email</label>
-        <input type="email" name="username" class="form-control" id="id_username" required placeholder="">
+        <label for="{{ form.email.id_for_label }}" class="form-label">Adresse email</label>
+        {{ form.email|add_class:"form-control" }}
+        {% for error in form.email.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
       </div>
 
-      <div class="mb-3">
-        <label for="id_password" class="form-label">Mot de passe</label>
-        <input type="password" name="password" class="form-control" id="id_password" required placeholder="">
+      <div class="mb-3 position-relative">
+        <label for="{{ form.mot_de_passe.id_for_label }}" class="form-label">Mot de passe</label>
+        <div class="input-group">
+          {{ form.mot_de_passe|add_class:"form-control" }}
+          <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.mot_de_passe.id_for_label }}', this)">
+            <i class="far fa-eye"></i>
+          </span>
+        </div>
+        {% for error in form.mot_de_passe.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
       </div>
 
       <input type="hidden" name="next" value="{{ next }}">
 
       <div class="d-grid mb-3">
         <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
-      </div>
-
-      <div class="text-center">
-        <a href="{% url 'password_reset' %}" class="text-decoration-none small">Mot de passe oublié ?</a>
       </div>
 
       <div class="text-center mt-2">
@@ -91,13 +95,21 @@
     </form>
   </div>
 </div>
+
+<!-- Script pour afficher/masquer le mot de passe -->
+<script>
+function togglePassword(id, el) {
+    const input = document.getElementById(id);
+    const icon = el.querySelector('i');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
+}
+</script>
 {% endblock %}
-
-
-
-
-
-
-
-
-

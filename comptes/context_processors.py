@@ -1,30 +1,33 @@
 def roles(request):
-    user = request.user
+    utilisateur = request.utilisateur
+    est_admin = False
     est_bibliothecaire = False
-    est_personnel_admin = False
+    est_personnel = False
     est_usager = False
     nb_notifications_biblio = 0
     nb_notifications_personnel = 0
     nb_notifications_usager = 0
     notifications_usager = []
 
-    if user.is_authenticated:
-        est_bibliothecaire = user.groups.filter(name="Bibliothécaire").exists()
-        est_personnel_admin = user.groups.filter(name="Personnel administratif").exists()
-        est_usager = not (est_bibliothecaire or est_personnel_admin)
+    if utilisateur:
+        est_admin = utilisateur.est_admin
+        est_bibliothecaire = utilisateur.est_bibliothecaire
+        est_personnel = utilisateur.est_personnel
+        est_usager = not (est_admin or est_bibliothecaire or est_personnel)
 
-        if hasattr(user, "notifications"):
+        if hasattr(utilisateur, "notifications"):
             if est_bibliothecaire:
-                nb_notifications_biblio = user.notifications.filter(lu=False).count()
-            if est_personnel_admin:
-                nb_notifications_personnel = user.notifications.filter(lu=False).count()
+                nb_notifications_biblio = utilisateur.notifications.filter(lu=False).count()
+            if est_personnel:
+                nb_notifications_personnel = utilisateur.notifications.filter(lu=False).count()
             if est_usager:
-                notifications_usager = user.notifications.filter(lu=False)
+                notifications_usager = utilisateur.notifications.filter(lu=False)
                 nb_notifications_usager = notifications_usager.count()
 
     return {
+        "est_admin": est_admin,
         "est_bibliothecaire": est_bibliothecaire,
-        "est_personnel_admin": est_personnel_admin,
+        "est_personnel": est_personnel,
         "est_usager": est_usager,
         "nb_notifications_biblio": nb_notifications_biblio,
         "nb_notifications_personnel": nb_notifications_personnel,

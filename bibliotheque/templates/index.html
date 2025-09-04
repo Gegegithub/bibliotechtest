@@ -139,77 +139,101 @@
   <main class="catalogue-section pb-5">
     <div class="container mt-5">
 
-      {% if perms.bibliotheque.add_categorie %}
+      <!-- Bouton d'ajout de catégorie - visible pour les bibliothécaires -->
+      {% if est_bibliothecaire %}
       <div class="text-end mb-3">
         <a href="{% url 'ajouter_categorie' %}" 
            class="btn"
            style="background-color: transparent; color: black; border: 1px solid black; border-radius: 5px;">
-           Ajouter une catégorie
+           <i class="bi bi-plus-circle me-2"></i>Ajouter une catégorie
         </a>
       </div>
       {% endif %}
 
-      <div class="row">
-        {% for categorie in list_categories %}
-          <div class="col-md-4 d-flex align-items-stretch mb-4">
-            <div class="card shadow w-100 d-flex flex-column">
-              {% if categorie.image %}
-                <img src="{{ categorie.image.url }}" class="card-img-top" alt="{{ categorie.nom }}">
-              {% else %}
-                <img src="{% static 'images/default_category.jpg' %}" class="card-img-top" alt="Image par défaut">
-              {% endif %}
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ categorie.nom }}</h5>
-                <p class="card-text">Nombre d'ouvrages : {{ categorie.nombre_livres }}</p>
+      <!-- Affichage des catégories -->
+      {% if categories_existent %}
+        <div class="row">
+          {% for categorie in list_categories %}
+            <div class="col-md-4 d-flex align-items-stretch mb-4">
+              <div class="card shadow w-100 d-flex flex-column">
+                {% if categorie.image %}
+                  <img src="{{ categorie.image.url }}" class="card-img-top" alt="{{ categorie.nom }}">
+                {% else %}
+                  <img src="{% static 'img/default_category.jpg' %}" class="card-img-top" alt="Image par défaut">
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ categorie.nom }}</h5>
+                  <p class="card-text">Nombre d'ouvrages : {{ categorie.livre_set.count|default:0 }}</p>
 
-                <div class="mt-auto d-flex justify-content-between align-items-center">
-                  <a href="{% url 'details_categorie' categorie.id %}" class="btn btn-noir">
-                    Voir les ouvrages
-                  </a>
+                  <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <a href="{% url 'details_categorie' categorie.id %}" class="btn btn-noir">
+                      <i class="bi bi-eye me-2"></i>Voir les ouvrages
+                    </a>
 
-                   {% if est_bibliothecaire %}
-<div class="d-flex gap-2">
-  <!-- Bouton modifier -->
-  <a href="{% url 'modifier_categorie' categorie.id %}" class="btn btn-sm btn-primary" title="Modifier la catégorie">
-    <i class="bi bi-pencil"></i>
-  </a>
+                    {% if est_bibliothecaire %}
+                    <div class="d-flex gap-2">
+                      <!-- Bouton modifier -->
+                      <a href="{% url 'modifier_categorie' categorie.id %}" class="btn btn-sm btn-primary" title="Modifier la catégorie">
+                        <i class="bi bi-pencil"></i>
+                      </a>
 
-  <!-- Bouton supprimer -->
-  <form method="post" action="{% url 'supprimer_categorie' categorie.id %}" class="delete-form m-0">
-    {% csrf_token %}
-    <button type="button" class="btn btn-danger btn-sm delete-btn" title="Supprimer la catégorie">
-      <i class="bi bi-trash"></i>
-    </button>
-  </form>
-</div>
-{% endif %}
-
+                      <!-- Bouton supprimer -->
+                      <form method="post" action="{% url 'supprimer_categorie' categorie.id %}" class="delete-form m-0">
+                        {% csrf_token %}
+                        <button type="button" class="btn btn-danger btn-sm delete-btn" title="Supprimer la catégorie">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
             </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Message quand aucune catégorie n'existe -->
+        <div class="text-center py-5">
+          <div class="mb-4">
+            <i class="bi bi-journal-x" style="font-size: 4rem; color: #ccc;"></i>
           </div>
-        {% endfor %}
-      </div>
+          <h4 class="text-muted mb-3">Aucune catégorie disponible</h4>
+          <p class="text-muted mb-4">
+            La bibliothèque n'a pas encore de catégories d'ouvrages.
+            {% if est_bibliothecaire %}
+              <br>Commencez par créer votre première catégorie !
+            {% else %}
+              <br>Revenez plus tard ou contactez le personnel.
+            {% endif %}
+          </p>
+          {% if est_bibliothecaire %}
+            <a href="{% url 'ajouter_categorie' %}" class="btn btn-primary">
+              <i class="bi bi-plus-circle me-2"></i>Créer la première catégorie
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
 
     </div>
   </main>
 
   {% include '_footer.html' %}
 
-  <!-- Modal de confirmation (MDB) -->
+  <!-- Modal de confirmation (Bootstrap) -->
   <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title w-100 text-center" id="confirmDeleteLabel">⚠ Confirmation</h5>
-          <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Fermer"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
         </div>
         <div class="modal-body">
           Voulez-vous vraiment <strong>supprimer cette catégorie</strong> ?
           <div class="text-muted mt-2">Cette action est irréversible.</div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
           <button type="button" class="btn btn-danger" id="modalConfirmBtn">Supprimer</button>
         </div>
       </div>
@@ -217,10 +241,8 @@
   </div>
 
   <!-- JS -->
-  <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/popper.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/mdb.umd.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/script.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
   <script>
     // Changement de background
@@ -258,14 +280,14 @@
       setInterval(changeBackground, 8000);
     });
 
-    // Modal MDB + soumission du bon formulaire
+    // Modal Bootstrap + soumission du bon formulaire
     let formToSubmit = null;
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         formToSubmit = this.closest('form');
         const modalEl = document.getElementById('confirmDeleteModal');
-        const modal = new mdb.Modal(modalEl);   // <-- MDB, pas bootstrap.Modal
+        const modal = new bootstrap.Modal(modalEl);   // <-- Bootstrap standard
         modal.show();
       });
     });

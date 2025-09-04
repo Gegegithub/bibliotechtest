@@ -1,17 +1,22 @@
 {% extends "base.html" %}
 {% load static %}
+{% load comptes_extras %}
 
 {% block content %}
 <div class="container my-5">
   <div class="card shadow-sm mx-auto" style="max-width: 900px;">
 
     <div class="card-header bg-white border-bottom d-flex align-items-center">
-      {% static 'img/default-avatar.png' as default_avatar %}
-      <img src="{{ user.profile.photo.url|default:default_avatar }}" 
-           alt="Photo de profil" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+      {% if request.utilisateur.photo %}
+        <img src="{{ request.utilisateur.photo.url }}" 
+             alt="Photo de profil" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+      {% else %}
+        <img src="{% static 'img/default-avatar.png' %}" 
+             alt="Photo de profil par défaut" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+      {% endif %}
       <div class="ms-3">
-        <h2 class="mb-0">{{ user.get_full_name }}</h2>
-        <small class="text-muted">{{ user.email }}</small>
+        <h2 class="mb-0">{{ request.utilisateur.prenom }} {{ request.utilisateur.nom }}</h2>
+        <small class="text-muted">{{ request.utilisateur.email }}</small>
       </div>
     </div>
 
@@ -22,18 +27,21 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Nom et prénom :</strong> {{ user.get_full_name }}
+            <strong>Prénom :</strong> {{ request.utilisateur.prenom }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Adresse email :</strong> {{ user.email }}
+            <strong>Nom :</strong> {{ request.utilisateur.nom }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Numéro de téléphone :</strong> {{ user.profile.telephone|default:"Non renseigné" }}
+            <strong>Adresse email :</strong> {{ request.utilisateur.email }}
           </div>
           <div class="col-md-6 mb-2">
+            <strong>Numéro de téléphone :</strong> {{ request.utilisateur.telephone|default:"Non renseigné" }}
+          </div>
+          <div class="col-md-12 mb-2">
             <strong>Adresse postale :</strong> 
-            {% if user.profile.adresse %}
-              {{ user.profile.adresse }}, {{ user.profile.code_postal }} {{ user.profile.ville }}
+            {% if request.utilisateur.adresse %}
+              {{ request.utilisateur.adresse }}
             {% else %}
               Non renseignée
             {% endif %}
@@ -47,16 +55,16 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Type d’utilisateur :</strong> {{ user.profile.type_utilisateur|default:"Non renseigné" }}
+            <strong>Type d'utilisateur :</strong> {{ request.utilisateur.get_type_utilisateur_display|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Fonction / poste :</strong> {{ user.profile.fonction|default:"Non renseigné" }}
+            <strong>Profession :</strong> {{ request.utilisateur.profession|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Institution / entreprise :</strong> {{ user.profile.institution|default:"Non renseigné" }}
+            <strong>Institution / entreprise :</strong> {{ request.utilisateur.institution|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Secteur d’activité :</strong> {{ user.profile.secteur_activite|default:"Non renseigné" }}
+            <strong>Secteur d'activité :</strong> {{ request.utilisateur.secteur_activite|default:"Non renseigné" }}
           </div>
         </div>
       </section>
@@ -67,13 +75,74 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Numéro d’abonné :</strong> {{ user.profile.numero_abonne|default:"Non renseigné" }}
+            <strong>Date d'inscription :</strong> {{ request.utilisateur.date_inscription|date:"d/m/Y" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Date d’inscription :</strong> {{ user.date_joined|date:"d/m/Y" }}
+            <strong>Dernière connexion :</strong> 
+            {% if request.utilisateur.derniere_connexion %}
+              {{ request.utilisateur.derniere_connexion|date:"d/m/Y H:i" }}
+            {% else %}
+              Première connexion
+            {% endif %}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Statut du compte :</strong> {{ user.profile.statut|default:"Actif" }}
+            <strong>Statut du compte :</strong> 
+            {% if request.utilisateur.est_actif %}
+              <span class="badge bg-success">Actif</span>
+            {% else %}
+              <span class="badge bg-danger">Inactif</span>
+            {% endif %}
+          </div>
+          <div class="col-md-6 mb-2">
+            <strong>Rôle principal :</strong>
+            {% if request.utilisateur.est_admin %}
+              <span class="badge bg-danger">Administrateur</span>
+            {% elif request.utilisateur.est_bibliothecaire %}
+              <span class="badge bg-primary">Bibliothécaire</span>
+            {% elif request.utilisateur.est_personnel %}
+              <span class="badge bg-warning text-dark">Personnel administratif</span>
+            {% else %}
+              <span class="badge bg-info">Lecteur</span>
+            {% endif %}
+          </div>
+          <div class="col-md-12 mb-2">
+            <small class="text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              Ce rôle vous a été attribué par le super administrateur et détermine vos permissions dans la bibliothèque.
+            </small>
+          </div>
+          
+          <!-- Détail des permissions selon le rôle -->
+          <div class="col-md-12 mt-3">
+            <div class="alert alert-light border">
+              <h6 class="mb-2"><i class="bi bi-shield-check me-2"></i>Vos permissions actuelles :</h6>
+              {% if request.utilisateur.est_admin %}
+                <ul class="mb-0 small">
+                  <li>Gestion complète de tous les utilisateurs</li>
+                  <li>Promotion et rétrogradation des rôles</li>
+                  <li>Accès à toutes les fonctionnalités de la bibliothèque</li>
+                </ul>
+              {% elif request.utilisateur.est_bibliothecaire %}
+                <ul class="mb-0 small">
+                  <li>Gestion des livres et catégories</li>
+                  <li>Gestion des rendez-vous</li>
+                  <li>Accès aux notifications bibliothécaire</li>
+                </ul>
+              {% elif request.utilisateur.est_personnel %}
+                <ul class="mb-0 small">
+                  <li>Gestion administrative des rendez-vous</li>
+                  <li>Accès aux notifications personnel</li>
+                  <li>Support utilisateur</li>
+                </ul>
+              {% else %}
+                <ul class="mb-0 small">
+                  <li>Consultation du catalogue</li>
+                  <li>Gestion de vos favoris</li>
+                  <li>Prise de rendez-vous</li>
+                  <li>Accès à vos notifications</li>
+                </ul>
+              {% endif %}
+            </div>
           </div>
         </div>
       </section>
@@ -89,6 +158,14 @@
           <a href="{% url 'changer_mot_de_passe' %}" class="btn btn-outline-secondary">
             <i class="bi bi-lock-fill me-1"></i>Changer le mot de passe
           </a>
+          
+          <!-- Lien d'administration pour le super admin -->
+          {% if request.utilisateur|is_super_admin %}
+            <a href="{% url 'administration_utilisateurs' %}" class="btn btn-outline-warning">
+              <i class="bi bi-people-fill me-1"></i>Administration des Utilisateurs
+            </a>
+          {% endif %}
+          
           <a href="{% url 'deconnexion' %}" class="btn btn-outline-danger ms-auto">
             <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
           </a>

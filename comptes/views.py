@@ -1,99 +1,64 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import Etape2ProfilForm, ProfilBibliotheque
-from django.contrib.auth.views import LoginView
-from .forms import RendezVousForm
-from comptes.models import Usager
-from .models import RendezVous, Notification
-from .forms import RendezVousUpdateForm  # un formulaire pour modifier le statut
-from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.urls import reverse_lazy, reverse
-from django.http import HttpResponseForbidden , JsonResponse, HttpResponse
-from django.contrib.auth.models import Group
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db.models import Case, When, Value, IntegerField
-from bibliotheque.models import Livre
-from django.db import models
-from datetime import date
-from django.db.models import Count, Avg, F, Q
-from datetime import date, timedelta
+from django.db.models import Case, When, Value, IntegerField, Count, Avg, F, Q
 from django.template.loader import render_to_string
 from weasyprint import HTML
+from datetime import date, timedelta
+from .forms import InscriptionForm, ConnexionForm, RendezVousForm, RendezVousUpdateForm
+from .models import Utilisateur, RendezVous, Notification
+from bibliotheque.models import Livre
+from .middleware import login_requis, permission_requise
 
 
 def inscription(request):
     if request.method == "POST":
-        nom = request.POST.get('nom')
-        prenom = request.POST.get('prenom')
-        email = request.POST.get('email')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2')
-
-        if password1 == password2:
-            if Usager.objects.filter(username=email).exists():
-                messages.error(request, "Un compte avec cet email existe déjà.")
-                return redirect('inscription')
-            user = Usager.objects.create_user(
-                username=email,
-                email=email,
-                password=password1,
-                first_name=prenom,
-                last_name=nom
-            )
-            login(request, user)
-            messages.success(request, "Inscription réussie. Complétez maintenant votre profil.")
-            return redirect('inscription2')
-        else:
-            messages.error(request, "Les mots de passe ne correspondent pas.")
-            return redirect('inscription')
-    return render(request, 'inscription.html')
-
-
-@login_required
-def inscription2(request):
-    utilisateur = request.user
-
-    try:
-        profil = ProfilBibliotheque.objects.get(utilisateur=utilisateur)
-    except ProfilBibliotheque.DoesNotExist:
-        profil = ProfilBibliotheque(utilisateur=utilisateur)
-
-    if request.method == 'POST':
-        form = Etape2ProfilForm(request.POST, request.FILES, instance=profil)
+        form = InscriptionForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Profil complété avec succès. Vous pouvez maintenant vous connecter.")
+            utilisateur = form.save()
+            # Créer une session pour l'utilisateur
+            request.session['utilisateur_id'] = utilisateur.id
+            messages.success(request, "Inscription réussie ! Vous pouvez maintenant vous connecter.")
             return redirect('connexion')
         else:
             messages.error(request, "Veuillez corriger les erreurs du formulaire.")
     else:
-        form = Etape2ProfilForm(instance=profil)
-
-    return render(request, 'inscription2.html', {'form': form})
+        form = InscriptionForm()
+    
+    return render(request, 'inscription.html', {'form': form})
 
 
 def connexion(request):
     if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
+        form = ConnexionForm(request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, "Vous êtes bien connecté(e) !")
-
-            next_url = request.POST.get('next') or request.GET.get('next')
-            if next_url:
-                return redirect(next_url)
-            else:
-                return redirect('accueil')
-        else:
-            messages.error(request, "Email ou mot de passe invalide.")
+            email = form.cleaned_data['email']
+            mot_de_passe = form.cleaned_data['mot_de_passe']
+            try:
+                utilisateur = Utilisateur.objects.get(email=email)
+                if utilisateur.check_password(mot_de_passe):
+                    # Mettre à jour la dernière connexion
+                    utilisateur.derniere_connexion = timezone.now()
+                    utilisateur.save()
+                    # Créer une session pour l'utilisateur
+                    request.session['utilisateur_id'] = utilisateur.id
+                    messages.success(request, "Vous êtes bien connecté(e) !")
+                    
+                    next_url = request.POST.get('next') or request.GET.get('next')
+                    if next_url:
+                        return redirect(next_url)
+                    else:
+                        return redirect('accueil')
+                else:
+                    messages.error(request, "Email ou mot de passe invalide.")
+            except Utilisateur.DoesNotExist:
+                messages.error(request, "Email ou mot de passe invalide.")
     else:
-        form = AuthenticationForm()
+        form = ConnexionForm()
 
     next_url = request.GET.get('next', '')
     return render(request, 'connexion.html', {'form': form, 'next': next_url})
@@ -117,36 +82,29 @@ def Connexion(request):
 
 
 def deconnexion(request):
-    logout(request)
+    if 'utilisateur_id' in request.session:
+        del request.session['utilisateur_id']
     messages.info(request, "Vous avez été déconnecté(e).")
     return redirect('accueil')
 
 
-User = get_user_model()
+
 
 
 #Suivi des rendez-vous par l'utilisateur
-@login_required
+@login_requis
 def mes_rendezvous(request):
     # On récupère uniquement les rendez-vous de l'utilisateur connecté
-    rdvs = RendezVous.objects.filter(utilisateur=request.user).order_by('-date_souhaitee')
+    rdvs = RendezVous.objects.filter(utilisateur=request.utilisateur).order_by('-date_souhaitee')
     return render(request, 'mes_rendezvous.html', {'rdvs': rdvs})
 
 
-def est_personnel_admin(user):
-    return user.is_authenticated and user.groups.filter(name="Personnel administratif").exists()
 
 
-class PersonnelAdminLoginView(LoginView):
-    template_name = "login_personnel_admin.html"
+
+
     
-    def get_success_url(self):
-        user = self.request.user
-        if user.groups.filter(name="Personnel administratif").exists():
-            return reverse_lazy("gestion_rendezvous")
-        return reverse_lazy("accueil")
-    
-@login_required
+@login_requis
 def rendez_vous(request):
     livres_similaires = []
     message_indispo = None
@@ -154,7 +112,7 @@ def rendez_vous(request):
     if request.method == "POST":
         form = RendezVousForm(request.POST)
         if form.is_valid():
-            livre = form.cleaned_data['livre_titre']
+            livre = form.cleaned_data['livre_titre']  # C'est déjà un objet Livre grâce au clean_livre_titre
             date = form.cleaned_data.get('date_souhaitee')
 
             conflit = RendezVous.objects.filter(
@@ -173,7 +131,7 @@ def rendez_vous(request):
 
             # Sauvegarde si pas de conflit
             instance = form.save(commit=False)
-            instance.utilisateur = request.user
+            instance.utilisateur = request.utilisateur
 
             if not instance.statut:
                 instance.statut = "en_attente"  # statut par défaut
@@ -181,16 +139,12 @@ def rendez_vous(request):
             instance.save()
 
             # ✅ Créer notification pour le personnel administratif
-            try:
-                personnel_group = Group.objects.get(name="Personnel administratif")
-                membres = User.objects.filter(groups=personnel_group)
-                for membre in membres:
-                    Notification.objects.create(
-                        user=membre,
-                        message=f"Nouvelle demande de rendez-vous de {instance.nom} {instance.prenom}."
-                    )
-            except Group.DoesNotExist:
-                pass
+            personnel = Utilisateur.objects.filter(est_personnel=True)
+            for membre in personnel:
+                Notification.objects.create(
+                    utilisateur=membre,
+                    message=f"Nouvelle demande de rendez-vous de {request.utilisateur.prenom} {request.utilisateur.nom}."
+                )
 
             return redirect("confirmation_rdv")
     else:
@@ -205,8 +159,8 @@ def rendez_vous(request):
 
 
 
-@login_required(login_url='/personnel_admin/login/')
-@user_passes_test(est_personnel_admin, login_url='/personnel_admin/login/')
+@login_requis
+@permission_requise('personnel')
 def gestion_rendezvous(request):
     # Récupérer tous les rendez-vous, triés par date
     rdvs = RendezVous.objects.all().order_by('date_souhaitee')
@@ -240,12 +194,14 @@ def gestion_rendezvous(request):
 
 
 
-def est_personnel_admin(user):
-    return user.is_authenticated and user.groups.filter(name="Personnel administratif").exists()
 
-@login_required(login_url='/personnel_admin/login/')
-@user_passes_test(est_personnel_admin, login_url='/personnel_admin/login/')
+
+@login_requis
 def modifier_rdv(request, id):
+    # Vérifier que l'utilisateur est Personnel ou Admin
+    if not (request.utilisateur.est_personnel):
+        messages.error(request, "Vous devez être Personnel")
+        return redirect('accueil')
     rdv = get_object_or_404(RendezVous, id=id)
 
     if request.method == "POST":
@@ -269,24 +225,24 @@ def modifier_rdv(request, id):
             titre_ouvrage = rdv.titre_ouvrage or "non spécifié"
             auteur_ouvrage = getattr(rdv, "auteur_ouvrage", "non spécifié")
 
-        # ✅ 3️⃣ Créer une notification pour l’UTILISATEUR concerné
+        # ✅ 3️⃣ Créer une notification pour l'UTILISATEUR concerné
         Notification.objects.create(
-            user=rdv.utilisateur,
+            utilisateur=rdv.utilisateur,
             message=(
                 f"Le statut de votre rendez-vous du {rdv.date_souhaitee} "
-                f"pour l’ouvrage « {titre_ouvrage} » "
-                f"de l’auteur « {auteur_ouvrage} » est passé à : {rdv.get_statut_display()}"
+                f"pour l'ouvrage « {titre_ouvrage} » "
+                f"de l'auteur « {auteur_ouvrage} » est passé à : {rdv.get_statut_display()}"
             ),
             url=reverse("mes_rendezvous")
         )
 
         # 4️⃣ Créer une notification pour les bibliothécaires si le RDV est confirmé
         if statut_precedent == "en_attente" and nouveau_statut.lower() in ["confirme", "confirmé"]:
-            bibliothecaires = Usager.objects.filter(groups__name="Bibliothécaire")
+            bibliothecaires = Utilisateur.objects.filter(est_bibliothecaire=True)
             for biblio in bibliothecaires:
                 Notification.objects.create(
-                    user=biblio,
-                    message=f"Nouveau rendez-vous confirmé pour {rdv.utilisateur.get_full_name()}",
+                    utilisateur=biblio,
+                    message=f"Nouveau rendez-vous confirmé pour {rdv.utilisateur.prenom} {rdv.utilisateur.nom}",
                     url=reverse('gestion_rdv_bibliothecaire')
                 )
 
@@ -299,12 +255,11 @@ def modifier_rdv(request, id):
 
 
 
-def est_bibliothecaire(user):
-    return user.is_authenticated and user.groups.filter(name="Bibliothécaire").exists()
 
 
-@login_required(login_url='/bibliothecaire/login/')
-@user_passes_test(est_bibliothecaire, login_url='/bibliothecaire/login/')
+
+@login_requis
+@permission_requise('bibliothecaire')
 def gestion_rdv_bibliothecaire(request):
     from datetime import datetime  # ✅ Import placé dans la vue comme tu l’as demandé
 
@@ -321,7 +276,7 @@ def gestion_rdv_bibliothecaire(request):
     notif_id = request.GET.get('notif_id')
     if notif_id:
         try:
-            notif = Notification.objects.get(id=notif_id, user=request.user)
+            notif = Notification.objects.get(id=notif_id, utilisateur=request.utilisateur)
             notif.lu = True
             notif.save()
         except Notification.DoesNotExist:
@@ -365,21 +320,14 @@ def enregistrer_rdv(request):
 
 
 
-class BibliothecaireLoginView(LoginView):
-    template_name = "login_bibliothecaire.html"
 
-    def get_success_url(self):
-        user = self.request.user
-        if user.groups.filter(name="Bibliothécaire").exists():
-            return reverse_lazy("gestion_rdv_bibliothecaire")
-        return reverse_lazy("accueil")
 
 
 # ===================== NOUVELLE VUE CONFIRMER RDV =====================
-User = get_user_model()
 
-@login_required
-@user_passes_test(est_personnel_admin, login_url='/personnel_admin/login/')
+
+@login_requis
+@permission_requise('admin')
 def confirmer_rendezvous(request, rendezvous_id):
     rdv = get_object_or_404(RendezVous, id=rendezvous_id)
 
@@ -388,17 +336,14 @@ def confirmer_rendezvous(request, rendezvous_id):
         rdv.save()
 
         # Notification pour tous les bibliothécaires
-        try:
-            bibliothecaires_group = Group.objects.get(name="Bibliothécaire")
-            bibliothecaires = User.objects.filter(groups=bibliothecaires_group)
-            for biblio in bibliothecaires:
-                Notification.objects.create(
-                    user=biblio,
-                    message="Nouveau rendez-vous ajouté, vous pouvez consulter la liste des rendez-vous.",
-                    url=reverse('gestion_rendezvous')  # lien vers la page de gestion
-                )
-        except Group.DoesNotExist:
-            pass  # Si le groupe n'existe pas, on ignore
+        # Notifier les bibliothécaires
+        bibliothecaires = Utilisateur.objects.filter(est_bibliothecaire=True)
+        for biblio in bibliothecaires:
+            Notification.objects.create(
+                utilisateur=biblio,
+                message="Nouveau rendez-vous ajouté, vous pouvez consulter la liste des rendez-vous.",
+                url=reverse('gestion_rendezvous')  # lien vers la page de gestion
+            )
 
         messages.success(request, "Le rendez-vous a été confirmé et les bibliothécaires ont été notifiés.")
         return redirect("gestion_rendezvous")
@@ -408,20 +353,20 @@ def confirmer_rendezvous(request, rendezvous_id):
 # ===================================================================
 
 
-@login_required
+@login_requis
 def notifications(request):
     # Vérifie le groupe
-    if not request.user.groups.filter(name="Bibliothécaire").exists():
+    if not request.utilisateur.est_bibliothecaire:
         return HttpResponseForbidden("Vous n'êtes pas autorisé à accéder à cette page.")
 
-    notifs = request.user.notifications.filter(lu=False).order_by('-created_at')
+    notifs = request.utilisateur.notifications.filter(lu=False).order_by('-created_at')
     
     return render(request, "notifications.html", {"notifications": notifs})
 
-@login_required
+@login_requis
 def notifications_usager(request):
-    notifs = request.user.notifications.all().order_by('-created_at')
-    nb_notifications_non_lues = request.user.notifications.filter(lu=False).count()
+    notifs = request.utilisateur.notifications.all().order_by('-created_at')
+    nb_notifications_non_lues = request.utilisateur.notifications.filter(lu=False).count()
     toutes_lues = all(notif.lu for notif in notifs)
     
     return render(request, "mes_notifications.html", {
@@ -434,7 +379,7 @@ def notifications_usager(request):
 
 
 
-@login_required
+@login_requis
 def notifier_rdv(request, rdv_id):
     rdv = get_object_or_404(RendezVous, id=rdv_id)
 
@@ -462,16 +407,16 @@ def notifier_rdv(request, rdv_id):
 
         # 2️⃣ Création de notification pour l'utilisateur
         Notification.objects.create(
-            user=rdv.utilisateur,
+            utilisateur=rdv.utilisateur,
             message=f"Le statut de votre rendez-vous du {rdv.date_souhaitee} "
                     f"pour l'ouvrage \"{titre_ouvrage}\" est passé à : {rdv.statut}"
         )
 
         # 3️⃣ Création de notifications pour les bibliothécaires
-        bibliothecaires = User.objects.filter(groups__name="Bibliothécaire")
+        bibliothecaires = Utilisateur.objects.filter(est_bibliothecaire=True)
         for biblio in bibliothecaires:
             Notification.objects.create(
-                user=biblio,
+                utilisateur=biblio,
                 message=f"Nouveau rendez-vous confirmé avec {rdv.utilisateur.first_name} {rdv.utilisateur.last_name}"
             )
 
@@ -483,24 +428,24 @@ def notifier_rdv(request, rdv_id):
 
 
 
-@login_required
-@user_passes_test(est_personnel_admin)
+@login_requis
+@permission_requise('admin')
 def notifications_personnel(request):
-    notifications = request.user.notifications.filter(lu=False).order_by("-created_at")
+    notifications = request.utilisateur.notifications.filter(lu=False).order_by("-created_at")
     return render(request, "notifications/liste.html", {"notifications": notifications})
 
 def notifications_counts(request):
     nb_notifications_personnel = 0
     nb_notifications_usager = 0
 
-    if request.user.is_authenticated:
+    if request.utilisateur.is_authenticated:
         # Notifications pour le personnel administratif
-        if request.user.groups.filter(name="Personnel administratif").exists():
-            nb_notifications_personnel = request.user.notifications.filter(lu=False).count()
+        if request.utilisateur.est_personnel:
+            nb_notifications_personnel = request.utilisateur.notifications.filter(lu=False).count()
 
         # Notifications pour l'usager
-        elif not request.user.groups.filter(name__in=["Bibliothécaire", "Personnel administratif"]).exists():
-            nb_notifications_usager = request.user.notifications.filter(lu=False).count()
+        elif not (request.utilisateur.est_bibliothecaire or request.utilisateur.est_personnel):
+            nb_notifications_usager = request.utilisateur.notifications.filter(lu=False).count()
 
     return {
         "nb_notifications_personnel": nb_notifications_personnel,
@@ -511,9 +456,9 @@ def notifications_counts(request):
 
 
 
-User = get_user_model()
 
-@login_required
+
+@login_requis
 def creer_rdv(request):
     if request.method == "POST":
         # Récupérer les données du formulaire
@@ -531,21 +476,17 @@ def creer_rdv(request):
             date_souhaitee=date_souhaitee,
             statut="en_attente",
             titre_ouvrage=titre_ouvrage,
-            utilisateur=request.user
+            utilisateur=request.utilisateur
         )
 
         # Notifier les membres du personnel administratif
-        try:
-            personnel_group = Group.objects.get(name="Personnel administratif")
-            membres = User.objects.filter(groups=personnel_group)
-            for membre in membres:
-                Notification.objects.create(
-                    user=membre,
-                    message=f"Nouvelle demande de rendez-vous de {rdv.nom} {rdv.prenom}."
-                )
-        except Group.DoesNotExist:
-            # Optionnel : gérer le cas où le groupe n'existe pas
-            pass
+        # Notifier le personnel administratif
+        personnel = Utilisateur.objects.filter(est_personnel=True)
+        for membre in personnel:
+            Notification.objects.create(
+                utilisateur=membre,
+                message=f"Nouvelle demande de rendez-vous de {rdv.nom} {rdv.prenom}."
+            )
 
         # Redirection vers la confirmation
         return redirect('confirmation_rdv')
@@ -553,20 +494,20 @@ def creer_rdv(request):
     # Si GET ou autre méthode, rediriger vers la page de rendez-vous
     return redirect('rendez_vous')
 
-@login_required
+@login_requis
 def lire_notification(request, notification_id):
     # Récupérer la notification pour l'utilisateur connecté
-    notif = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notif = get_object_or_404(Notification, id=notification_id, utilisateur=request.utilisateur)
     
     # Marquer comme lue
     notif.lu = True
     notif.save()
     
     # Redirection selon le type d'utilisateur
-    if request.user.groups.filter(name="Personnel administratif").exists():
+    if request.utilisateur.est_personnel:
         # Pour le personnel admin, respecter l'URL si elle existe
         return redirect(notif.url if notif.url else 'gestion_rendezvous')
-    elif not request.user.groups.filter(name__in=["Bibliothécaire", "Personnel administratif"]).exists():
+    elif not (request.utilisateur.est_bibliothecaire or request.utilisateur.est_personnel):
         # Pour les usagers, rediriger toujours vers mes_rendezvous
         return redirect('mes_rendezvous')
     else:
@@ -575,19 +516,19 @@ def lire_notification(request, notification_id):
 
 
 
-@login_required
+@login_requis
 def notification_marquer_lue(request, notif_id):
     # Récupère la notification pour l'utilisateur connecté
-    notif = get_object_or_404(Notification, id=notif_id, user=request.user)
+    notif = get_object_or_404(Notification, id=notif_id, utilisateur=request.utilisateur)
     
     # Marquer comme lue
     notif.lu = True
     notif.save()
     
     # Redirection selon le groupe de l'utilisateur
-    if request.user.groups.filter(name="Personnel administratif").exists():
+    if request.utilisateur.est_personnel:
         return redirect('gestion_rendezvous')  # page admin
-    elif request.user.groups.filter(name="Bibliothécaire").exists():
+    elif request.utilisateur.est_bibliothecaire:
         return redirect('gestion_rdv_bibliothecaire')  # page bibliothécaire
     else:
         # Pour les usagers, rediriger vers mes_rendezvous
@@ -596,13 +537,13 @@ def notification_marquer_lue(request, notif_id):
 
 
 
-@login_required
+@login_requis
 def home(request):
     # Vérifie si l'utilisateur est bibliothécaire
-    est_biblio = request.user.groups.filter(name="Bibliothécaire").exists()
+    est_biblio = request.utilisateur.groups.filter(name="Bibliothécaire").exists()
 
     # Compteur de notifications non lues pour **tous les utilisateurs**
-    nb_notifications = request.user.notifications.filter(lu=False).count()
+    nb_notifications = request.utilisateur.notifications.filter(lu=False).count()
 
     return render(request, "index.html", {
         "est_bibliothecaire": est_biblio,
@@ -616,15 +557,9 @@ def accueil(request):
     return render(request, 'accueil.html')
 
 
+@login_requis
 def mon_compte(request):
-    user = request.user
-    est_admin_personnel = False
-    if user.is_authenticated and user.groups.filter(name="Personnel administratif").exists():
-        est_admin_personnel = True
-    return render(request, 'mon_compte.html', {
-        'user': user,
-        'est_admin_personnel': est_admin_personnel
-    })
+    return render(request, 'mon_compte.html')
 
 
 
@@ -647,13 +582,12 @@ def confirmation_rdv(request):
     return render(request, 'confirmation_rdv.html')
 
 
-@login_required
+@login_requis
 def tableau_de_bord(request):
     # 🔒 Restriction d'accès : superuser, bibliothécaire ou personnel administratif
-    user_groups = request.user.groups.values_list('name', flat=True)
-    if not (request.user.is_superuser or
-            'Bibliothécaire' in user_groups or
-            'Personnel administratif' in user_groups):
+    if not (request.utilisateur.est_admin or
+            request.utilisateur.est_bibliothecaire or
+            request.utilisateur.est_personnel):
         return HttpResponseForbidden("Accès refusé : réservé au personnel autorisé.")
 
     today = date.today()
@@ -662,7 +596,7 @@ def tableau_de_bord(request):
     # -------------------
     # 1️⃣ Usagers actifs
     # -------------------
-    total_usagers_actifs = Usager.objects.filter(
+    total_usagers_actifs = Utilisateur.objects.filter(
         rendezvous__isnull=False
     ).distinct().count()
 
@@ -677,7 +611,7 @@ def tableau_de_bord(request):
     )
 
     # -------------------
-    # 3️⃣ Temps moyen d’emprunt / rendez-vous
+    # 3️⃣ Temps moyen d'emprunt / rendez-vous
     # -------------------
     rdvs_today = RendezVous.objects.filter(date_souhaitee=today)
     avg_duree = (
@@ -707,7 +641,7 @@ def tableau_de_bord(request):
     )
 
     # -------------------
-    # 6️⃣ Taux d’occupation par catégorie
+    # 6️⃣ Taux d'occupation par catégorie
     # -------------------
     rdv_par_categorie = (
         RendezVous.objects.values('livre__categorie__nom')
@@ -730,10 +664,10 @@ def tableau_de_bord(request):
     ).count()
 
     # -------------------
-    # 8️⃣ Nombre d’usagers par type
+    # 8️⃣ Nombre d'usagers par type
     # -------------------
     usagers_par_type = (
-        ProfilBibliotheque.objects.values('type_utilisateur')
+        Utilisateur.objects.values('type_utilisateur')
         .annotate(count=Count('id'))
     )
 
@@ -763,12 +697,92 @@ def tableau_de_bord(request):
     return render(request, "dashboard.html", context)
 
 
+@login_requis
+def administration_utilisateurs(request):
+    """
+    Vue d'administration des utilisateurs - accessible uniquement au premier utilisateur (super admin)
+    """
+    # Vérifier si l'utilisateur est le premier utilisateur (super admin)
+    premier_utilisateur = Utilisateur.objects.order_by('date_inscription').first()
+    
+    if not premier_utilisateur or request.utilisateur.id != premier_utilisateur.id:
+        messages.error(request, "Accès refusé : cette fonctionnalité est réservée au super administrateur.")
+        return redirect('accueil')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        utilisateur_id = request.POST.get('utilisateur_id')
+        
+        try:
+            utilisateur_cible = Utilisateur.objects.get(id=utilisateur_id)
+            
+            if action == 'promouvoir_lecteur':
+                # Lecteur = utilisateur simple (aucun rôle spécial)
+                utilisateur_cible.est_admin = False
+                utilisateur_cible.est_bibliothecaire = False
+                utilisateur_cible.est_personnel = False
+                messages.success(request, f"{utilisateur_cible.prenom} {utilisateur_cible.nom} a été promu lecteur.")
+                
+            elif action == 'promouvoir_bibliothecaire':
+                # Bibliothécaire = gestion des livres et RDV
+                utilisateur_cible.est_bibliothecaire = True
+                utilisateur_cible.est_admin = False
+                utilisateur_cible.est_personnel = False
+                messages.success(request, f"{utilisateur_cible.prenom} {utilisateur_cible.nom} a été promu bibliothécaire.")
+                
+            elif action == 'promouvoir_personnel':
+                # Personnel = gestion administrative et RDV
+                utilisateur_cible.est_personnel = True
+                utilisateur_cible.est_admin = False
+                utilisateur_cible.est_bibliothecaire = False
+                messages.success(request, f"{utilisateur_cible.prenom} {utilisateur_cible.nom} a été promu personnel administratif.")
+                
+            elif action == 'activer_compte':
+                utilisateur_cible.est_actif = True
+                messages.success(request, f"Le compte de {utilisateur_cible.prenom} {utilisateur_cible.nom} a été activé.")
+                
+            elif action == 'desactiver_compte':
+                utilisateur_cible.est_actif = False
+                messages.success(request, f"Le compte de {utilisateur_cible.prenom} {utilisateur_cible.nom} a été désactivé.")
+            
+            utilisateur_cible.save()
+            
+        except Utilisateur.DoesNotExist:
+            messages.error(request, "Utilisateur introuvable.")
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la modification : {str(e)}")
+    
+    # Récupérer tous les utilisateurs sauf le super admin
+    utilisateurs = Utilisateur.objects.exclude(id=premier_utilisateur.id).order_by('-date_inscription')
+    
+    # Calculer les statistiques (sans le super admin)
+    total_utilisateurs = Utilisateur.objects.exclude(id=premier_utilisateur.id).count()
+    nb_lecteurs = Utilisateur.objects.filter(
+        est_admin=False, 
+        est_bibliothecaire=False, 
+        est_personnel=False
+    ).exclude(id=premier_utilisateur.id).count()
+    nb_bibliothecaires = Utilisateur.objects.filter(est_bibliothecaire=True).exclude(id=premier_utilisateur.id).count()
+    nb_personnel = Utilisateur.objects.filter(est_personnel=True).exclude(id=premier_utilisateur.id).count()
+    
+    context = {
+        'utilisateurs': utilisateurs,
+        'premier_utilisateur': premier_utilisateur,
+        'total_utilisateurs': total_utilisateurs,
+        'nb_lecteurs': nb_lecteurs,
+        'nb_bibliothecaires': nb_bibliothecaires,
+        'nb_personnel': nb_personnel,
+    }
+    
+    return render(request, 'administration_utilisateurs.html', context)
+
+
 def generer_rapport_pdf(request):
     today = date.today()
     last_week = today - timedelta(days=7)
 
     # Données du dashboard
-    total_usagers_actifs = Usager.objects.filter(rendezvous__isnull=False).distinct().count()
+    total_usagers_actifs = Utilisateur.objects.filter(rendezvous__isnull=False).distinct().count()
     flux_journalier = RendezVous.objects.filter(date_souhaitee=today)
     top_livres = (
         RendezVous.objects.values('livre__titre')
@@ -776,7 +790,7 @@ def generer_rapport_pdf(request):
         .order_by('-nb_emprunts')[:5]
     )
     usagers_par_type = (
-        Usager.objects.values('profilbibliotheque__type_utilisateur')
+        Utilisateur.objects.values('profilutilisateur__type_utilisateur')
         .annotate(count=Count('id'))
     )
 

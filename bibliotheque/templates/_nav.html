@@ -1,5 +1,196 @@
 {% load static %}
 
+<style>
+  /* Styles personnalisés pour le menu déroulant Mon Compte */
+  .dropdown-menu-center {
+    min-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 8px 0;
+  }
+  
+  .dropdown-menu-center .dropdown-item {
+    padding: 10px 20px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 2px 8px;
+  }
+  
+  .dropdown-menu-center .dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+  }
+  
+  .dropdown-menu-center .dropdown-divider {
+    margin: 8px 16px;
+    border-color: #e9ecef;
+  }
+  
+  /* Animation d'apparition */
+  .dropdown-menu-center.show {
+    animation: dropdownFadeIn 0.2s ease-out;
+  }
+  
+  @keyframes dropdownFadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  /* Système de notifications toast */
+  .toast-container {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+  }
+
+  .toast-notification {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: none;
+    margin-bottom: 10px;
+    overflow: hidden;
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .toast-notification.success {
+    border-left: 4px solid #28a745;
+  }
+
+  .toast-notification.error {
+    border-left: 4px solid #dc3545;
+  }
+
+  .toast-notification.warning {
+    border-left: 4px solid #ffc107;
+  }
+
+  .toast-notification.info {
+    border-left: 4px solid #17a2b8;
+  }
+
+  .toast-header {
+    background: transparent;
+    border-bottom: 1px solid #e9ecef;
+    padding: 12px 16px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .toast-close:hover {
+    background: #f8f9fa;
+    color: #666;
+  }
+
+  .toast-body {
+    padding: 8px 16px 12px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .toast-notification.hiding {
+    animation: slideOutRight 0.3s ease-in forwards;
+  }
+  /* Styles personnalisés pour le menu déroulant Mon Compte */
+  .dropdown-menu-center {
+    min-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 8px 0;
+  }
+  
+  .dropdown-menu-center .dropdown-item {
+    padding: 10px 20px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 2px 8px;
+  }
+  
+  .dropdown-menu-center .dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+  }
+  
+  .dropdown-menu-center .dropdown-divider {
+    margin: 8px 16px;
+    border-color: #e9ecef;
+  }
+  
+  /* Animation d'apparition */
+  .dropdown-menu-center.show {
+    animation: dropdownFadeIn 0.2s ease-out;
+  }
+  
+  @keyframes dropdownFadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+</style>
+
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'accueil' %}">
@@ -28,15 +219,17 @@
             Accédez à la bibliothèque
           </a>
           <ul class="dropdown-menu" aria-labelledby="bibliothequeDropdown">
-            <li><a class="dropdown-item" href="{% url 'inscription' %}">S’inscrire</a></li>
-            <li><a class="dropdown-item" href="{% url 'connexion' %}">Se connecter</a></li>
+            {% if not request.utilisateur %}
+              <li><a class="dropdown-item" href="{% url 'inscription' %}">S'inscrire</a></li>
+              <li><a class="dropdown-item" href="{% url 'connexion' %}">Se connecter</a></li>
+            {% endif %}
             <li><a class="dropdown-item" href="{% url 'rendez_vous' %}">Prendre rendez-vous</a></li>
 
-            {% if perms.comptes.view_rendezvous %}
+            {% if request.utilisateur.est_bibliothecaire %}
               <li><a class="dropdown-item" href="{% url 'gestion_rdv_bibliothecaire' %}">Liste des rendez-vous</a></li>
             {% endif %}
 
-            {% if est_personnel_admin %}
+            {% if request.utilisateur.est_personnel %}
               <li><a class="dropdown-item" href="{% url 'gestion_rendezvous' %}">Gestion des rendez-vous (Admin)</a></li>
             {% endif %}
           </ul>
@@ -60,54 +253,49 @@
 
       <!-- Authentification / Mon Compte -->
       <ul class="navbar-nav ms-3">
-        {% if user.is_authenticated %}
+        {% if request.utilisateur %}
 
-          <!-- Cloche notifications PERSONNEL ADMINISTRATIF -->
-          {% if est_personnel_admin %}
+          <!-- Cloche notifications UNIFIÉE -->
           <li class="nav-item me-2 position-relative">
-            <a class="nav-link" href="{% url 'notifications_personnel' %}" title="Notifications (Personnel)">
-              <i class="bi bi-bell"></i>
-              {% if nb_notifications_personnel|default:0 > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {{ nb_notifications_personnel|default:0 }}
-                  <span class="visually-hidden">notifications non lues</span>
+            {% if request.utilisateur.est_personnel %}
+              <a class="nav-link" href="{% url 'gestion_rendezvous' %}" title="Gestion des Rendez-vous" id="rdv-link">
+                <i class="bi bi-calendar-check"></i>
+                {% if nb_rdv_en_attente|default:0 > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="rdv-badge">
+                    {{ nb_rdv_en_attente|default:0 }}
+                    <span class="visually-hidden">nouvelles demandes de rendez-vous</span>
+                  </span>
+                {% endif %}
+              </a>
+            {% elif request.utilisateur.est_bibliothecaire %}
+              <a class="nav-link" href="{% url 'notifications' %}" title="Notifications (Bibliothécaire)">
+                <i class="bi bi-bell"></i>
+                {% if nb_notifications_biblio|default:0 > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ nb_notifications_biblio|default:0 }}
+                    <span class="visually-hidden">notifications non lues</span>
+                  </span>
+                {% endif %}
+              </a>
+            {% elif request.utilisateur.est_admin %}
+              <a class="nav-link" href="{% url 'administration_utilisateurs' %}" title="Administration">
+                <i class="bi bi-gear"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                  Admin
                 </span>
-              {% endif %}
-            </a>
+              </a>
+            {% else %}
+              <a class="nav-link" href="{% url 'mes_notifications' %}" title="Mes Notifications">
+                <i class="bi bi-bell"></i>
+                {% if nb_notifications_usager|default:0 > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ nb_notifications_usager|default:0 }}
+                    <span class="visually-hidden">notifications non lues</span>
+                  </span>
+                {% endif %}
+              </a>
+            {% endif %}
           </li>
-          {% endif %}
-
-          <!-- Cloche notifications BIBLIOTHÉCAIRE -->
-          {% if est_bibliothecaire %}
-          <li class="nav-item me-2 position-relative">
-            <a class="nav-link" href="{% url 'notifications' %}" title="Notifications">
-              <i class="bi bi-bell"></i>
-              {% if nb_notifications_biblio|default:0 > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {{ nb_notifications_biblio|default:0 }}
-                  <span class="visually-hidden">notifications non lues</span>
-                </span>
-              {% endif %}
-            </a>
-          </li>
-          {% endif %}
-
-<!-- Cloche notifications USAGER -->
-{% if est_usager %}
-<li class="nav-item me-2 position-relative" style="z-index: 1050;">
-    <a class="nav-link position-relative" href="{% url 'mes_notifications' %}" title="Notifications">
-        <i class="bi bi-bell fs-4"></i>
-        {% if nb_notifications_usager > 0 %}
-        <span class="badge bg-danger rounded-pill position-absolute"
-              style="font-size: 0.65rem; padding: 0.25em 0.4em; top: 10%; right: -10%; z-index: 1060;">
-            {{ nb_notifications_usager }}
-        </span>
-        {% endif %}
-    </a>
-</li>
-{% endif %}
-
-
 
           <!-- Menu Mon Compte -->
           <li class="nav-item dropdown {% if is_mon_compte_active %}active{% endif %}">
@@ -115,12 +303,20 @@
                data-bs-toggle="dropdown" aria-expanded="false">
               Mon Compte
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="monCompteDropdown">
-              <li><a class="dropdown-item" href="{% url 'mon_compte' %}">Profil</a></li>
-              <li><a class="dropdown-item" href="{% url 'mes_favoris' %}">Mes favoris</a></li>
-              <li><a class="dropdown-item" href="{% url 'mes_rendezvous' %}">Mes rendez-vous</a></li>
+            <ul class="dropdown-menu dropdown-menu-center" aria-labelledby="monCompteDropdown" style="left: 50%; transform: translateX(-50%);">
+              <li><a class="dropdown-item" href="{% url 'mon_compte' %}">
+                <i class="bi bi-person-circle me-2"></i>Profil
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'mes_favoris' %}">
+                <i class="bi bi-heart me-2"></i>Mes favoris
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'mes_rendezvous' %}">
+                <i class="bi bi-calendar-event me-2"></i>Mes rendez-vous
+              </a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'deconnexion' %}">Se déconnecter</a></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'deconnexion' %}">
+                <i class="bi bi-box-arrow-right me-2"></i>Se déconnecter
+              </a></li>
             </ul>
           </li>
 
@@ -136,6 +332,9 @@
     </div>
   </div>
 </nav>
+
+<!-- Conteneur des notifications toast -->
+<div id="toast-container" class="toast-container"></div>
 
 <!-- Script pour suggestions dynamiques -->
 <script>
@@ -177,19 +376,81 @@
       suggestionsList.style.display = 'none';
     }
   });
+
+  // Système de notifications toast
+  function showToast(message, type = 'info', duration = 5000) {
+    const toastContainer = document.getElementById('toast-container');
+    
+    // Créer la notification
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    
+    // Déterminer le titre selon le type
+    let title = 'Information';
+    let icon = 'ℹ️';
+    switch(type) {
+      case 'success':
+        title = 'Succès';
+        icon = '✅';
+        break;
+      case 'error':
+        title = 'Erreur';
+        icon = '❌';
+        break;
+      case 'warning':
+        title = 'Attention';
+        icon = '⚠️';
+        break;
+    }
+    
+    toast.innerHTML = `
+      <div class="toast-header">
+        <span class="toast-title">${icon} ${title}</span>
+        <button type="button" class="toast-close" onclick="this.closest('.toast-notification').remove()">×</button>
+      </div>
+      <div class="toast-body">${message}</div>
+    `;
+    
+    // Ajouter au conteneur
+    toastContainer.appendChild(toast);
+    
+    // Auto-suppression après la durée spécifiée
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.remove();
+          }
+        }, 300);
+      }
+    }, duration);
+  }
+
+
+  // Fonction globale pour afficher des notifications depuis d'autres scripts
+  window.showNotification = showToast;
+
+  // Masquer les notifications après le clic
+  document.addEventListener('DOMContentLoaded', function() {
+    // Masquer toutes les notifications avec badge
+    const notificationLinks = document.querySelectorAll('a .badge');
+    notificationLinks.forEach(badge => {
+      const link = badge.closest('a');
+      if (link) {
+        link.addEventListener('click', function() {
+          // Animation de disparition
+          badge.style.transition = 'opacity 0.3s ease';
+          badge.style.opacity = '0';
+          
+          // Supprimer après l'animation
+          setTimeout(() => {
+            if (badge.parentNode) {
+              badge.remove();
+            }
+          }, 300);
+        });
+      }
+    });
+  });
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

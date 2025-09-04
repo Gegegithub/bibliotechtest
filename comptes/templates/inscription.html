@@ -1,44 +1,152 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+
 {% block content %}
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="card shadow-lg">
                 <div class="card-header text-center">
-                    <i class="fas fa-user"></i> S'inscrire
+                    <h3><i class="fas fa-user"></i> Inscription</h3>
                 </div>
                 <div class="card-body px-4">
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
-        
-                        <div class="form-group mb-3">
-                            <input type="text" placeholder="Nom" name="nom" class="form-control">
-                        </div>
-                        <div class="form-group mb-3">
-                            <input type="text" placeholder="Prénom" name="prenom" class="form-control">
-                        </div>
-                        <div class="form-group mb-3">
-                            <input type="text" placeholder="email" name="email" class="form-control">
+
+                        <!-- Informations de base -->
+                        <h4 class="mb-4">Informations personnelles</h4>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.prenom.id_for_label }}" class="form-label">Prénom</label>
+                                {{ form.prenom|add_class:"form-control" }}
+                                {% for error in form.prenom.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nom.id_for_label }}" class="form-label">Nom</label>
+                                {{ form.nom|add_class:"form-control" }}
+                                {% for error in form.nom.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
                         </div>
 
-                        <!-- Champ mot de passe avec icône -->
-                        <div class="form-group mb-3 position-relative">
-                            <input type="password" placeholder="Mot de passe" name="password1" class="form-control" id="password1">
-                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" style="cursor: pointer;" onclick="togglePassword('password1', this)">
-                                <i class="far fa-eye"></i>
-                            </span>
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email|add_class:"form-control" }}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                            {% if form.email.help_text %}
+                                <div class="form-text">{{ form.email.help_text }}</div>
+                            {% endif %}
                         </div>
 
-                        <!-- Champ confirmer mot de passe avec icône -->
-                        <div class="form-group mb-4 position-relative">
-                            <input type="password" placeholder="Confirmer le mot de passe" name="password2" class="form-control" id="password2">
-                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" style="cursor: pointer;" onclick="togglePassword('password2', this)">
-                                <i class="far fa-eye"></i>
-                            </span>
+                        <!-- Mot de passe -->
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.mot_de_passe.id_for_label }}" class="form-label">Mot de passe</label>
+                            <div class="input-group">
+                                {{ form.mot_de_passe|add_class:"form-control" }}
+                                <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.mot_de_passe.id_for_label }}', this)">
+                                    <i class="far fa-eye"></i>
+                                </span>
+                            </div>
+                            {% for error in form.mot_de_passe.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4 position-relative">
+                            <label for="{{ form.confirmer_mot_de_passe.id_for_label }}" class="form-label">Confirmer le mot de passe</label>
+                            <div class="input-group">
+                                {{ form.confirmer_mot_de_passe|add_class:"form-control" }}
+                                <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.confirmer_mot_de_passe.id_for_label }}', this)">
+                                    <i class="far fa-eye"></i>
+                                </span>
+                            </div>
+                            {% for error in form.confirmer_mot_de_passe.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Informations complémentaires -->
+                        <h4 class="mb-4">Informations complémentaires</h4>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.type_utilisateur.id_for_label }}" class="form-label">Type d'utilisateur</label>
+                            {{ form.type_utilisateur|add_class:"form-control" }}
+                            {% for error in form.type_utilisateur.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                            {% if form.type_utilisateur.help_text %}
+                                <div class="form-text">{{ form.type_utilisateur.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.profession.id_for_label }}" class="form-label">Profession</label>
+                                {{ form.profession|add_class:"form-control" }}
+                                {% for error in form.profession.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                                {% if form.profession.help_text %}
+                                    <div class="form-text">{{ form.profession.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.institution.id_for_label }}" class="form-label">Institution</label>
+                                {{ form.institution|add_class:"form-control" }}
+                                {% for error in form.institution.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                                {% if form.institution.help_text %}
+                                    <div class="form-text">{{ form.institution.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.secteur_activite.id_for_label }}" class="form-label">Secteur d'activité</label>
+                            {{ form.secteur_activite|add_class:"form-control" }}
+                            {% for error in form.secteur_activite.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                            {% if form.secteur_activite.help_text %}
+                                <div class="form-text">{{ form.secteur_activite.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.telephone.id_for_label }}" class="form-label">Téléphone</label>
+                            {{ form.telephone|add_class:"form-control" }}
+                            {% for error in form.telephone.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.adresse.id_for_label }}" class="form-label">Adresse</label>
+                            {{ form.adresse|add_class:"form-control" }}
+                            {% for error in form.adresse.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.photo.id_for_label }}" class="form-label">Photo de profil</label>
+                            {{ form.photo }}
+                            {% for error in form.photo.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                            {% if form.photo.help_text %}
+                                <div class="form-text">{{ form.photo.help_text }}</div>
+                            {% endif %}
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Suivant</button>
+                            <button type="submit" class="btn btn-primary">S'inscrire</button>
                         </div>
                     </form>
                 </div>
@@ -63,30 +171,11 @@ function togglePassword(id, el) {
     }
 }
 </script>
+
+<style>
+textarea.form-control {
+    height: 100px;
+    resize: vertical;
+}
+</style>
 {% endblock %}
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
