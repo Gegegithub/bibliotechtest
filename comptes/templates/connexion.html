@@ -1,22 +1,21 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
 
 {% block content %}
 <style>
-  /* Boutons bleus (btn-primary) recolorisés en vert pastel */
+  /* Boutons recolorisés en vert pastel */
   .btn-primary {
-    background-color: #A8D5BA !important; /* vert pastel */
+    background-color: #A8D5BA !important;
     border-color: #A8D5BA !important;
-    color: #1E3D31 !important; /* texte vert foncé */
-    box-shadow: none !important; /* supprime l'ombre */
+    color: #1E3D31 !important;
+    box-shadow: none !important;
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
   .btn-primary:hover,
   .btn-primary:focus {
-    background-color: #7CBF9E !important; /* vert plus foncé */
+    background-color: #7CBF9E !important;
     border-color: #7CBF9E !important;
-    color: #fff !important; /* texte blanc */
-    box-shadow: none !important; /* pas d'ombre au survol */
+    color: #fff !important;
+    box-shadow: none !important;
   }
 
   /* Liens verts pastels */
@@ -34,14 +33,17 @@
 </style>
 
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh; padding-bottom: 60px; flex-direction: column;">
-  {# Bloc message centré au-dessus de la carte #}
+
+  {# Bloc messages : uniquement connexion/déconnexion #}
   {% if messages %}
     <div class="mb-4 w-100" style="max-width: 420px; text-align: center;">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        {% if "connexion" in message.tags or "deconnexion" in message.tags %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endif %}
       {% endfor %}
     </div>
   {% endif %}
@@ -61,24 +63,13 @@
       {% endif %}
 
       <div class="mb-3">
-        <label for="{{ form.email.id_for_label }}" class="form-label">Adresse email</label>
-        {{ form.email|add_class:"form-control" }}
-        {% for error in form.email.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
+        <label for="id_email" class="form-label">Adresse email</label>
+        <input type="email" name="email" class="form-control" id="id_email" required placeholder="">
       </div>
 
-      <div class="mb-3 position-relative">
-        <label for="{{ form.mot_de_passe.id_for_label }}" class="form-label">Mot de passe</label>
-        <div class="input-group">
-          {{ form.mot_de_passe|add_class:"form-control" }}
-          <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.mot_de_passe.id_for_label }}', this)">
-            <i class="far fa-eye"></i>
-          </span>
-        </div>
-        {% for error in form.mot_de_passe.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
+      <div class="mb-3">
+        <label for="id_mot_de_passe" class="form-label">Mot de passe</label>
+        <input type="password" name="mot_de_passe" class="form-control" id="id_mot_de_passe" required placeholder="">
       </div>
 
       <input type="hidden" name="next" value="{{ next }}">
@@ -87,29 +78,16 @@
         <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
       </div>
 
+      <div class="text-center">
+        <a href="{% url 'password_reset' %}" class="text-decoration-none small">Mot de passe oublié ?</a>
+      </div>
+
       <div class="text-center mt-2">
         <span class="small">Pas encore inscrit ?</span>
         <a href="{% url 'inscription' %}" class="text-decoration-none small">Créer un compte</a>
       </div>
-
     </form>
   </div>
 </div>
-
-<!-- Script pour afficher/masquer le mot de passe -->
-<script>
-function togglePassword(id, el) {
-    const input = document.getElementById(id);
-    const icon = el.querySelector('i');
-    if (input.type === "password") {
-        input.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        input.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-    }
-}
-</script>
 {% endblock %}
+

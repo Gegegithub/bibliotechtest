@@ -33,7 +33,7 @@
                                 <td>{{ rdv.prenom }}</td>
                                 <td class="text-muted">{{ rdv.email }}</td>
                                 <td>{{ rdv.type_utilisateur }}</td>
-                                <td>{{ rdv.titre_ouvrage }}</td>
+                                <td>{{ rdv.livre.titre }}</td>
                                 <td>{{ rdv.date_souhaitee }}</td>
                                 <td>
                                     {% if rdv.statut == 'en_attente' %}
@@ -98,8 +98,7 @@
         color: #212529;
     }
 </style>
-{% endblock %}
-                                                                            
+{% endblock %}                                                       
 
 
 

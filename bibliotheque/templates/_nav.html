@@ -147,48 +147,6 @@
   .toast-notification.hiding {
     animation: slideOutRight 0.3s ease-in forwards;
   }
-  /* Styles personnalisés pour le menu déroulant Mon Compte */
-  .dropdown-menu-center {
-    min-width: 200px;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    border: 1px solid rgba(0,0,0,0.1);
-    padding: 8px 0;
-  }
-  
-  .dropdown-menu-center .dropdown-item {
-    padding: 10px 20px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    margin: 2px 8px;
-  }
-  
-  .dropdown-menu-center .dropdown-item:hover {
-    background-color: #f8f9fa;
-    transform: translateX(5px);
-  }
-  
-  .dropdown-menu-center .dropdown-divider {
-    margin: 8px 16px;
-    border-color: #e9ecef;
-  }
-  
-  /* Animation d'apparition */
-  .dropdown-menu-center.show {
-    animation: dropdownFadeIn 0.2s ease-out;
-  }
-  
-  @keyframes dropdownFadeIn {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-  }
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
@@ -257,44 +215,25 @@
 
           <!-- Cloche notifications UNIFIÉE -->
           <li class="nav-item me-2 position-relative">
-            {% if request.utilisateur.est_personnel %}
-              <a class="nav-link" href="{% url 'gestion_rendezvous' %}" title="Gestion des Rendez-vous" id="rdv-link">
-                <i class="bi bi-calendar-check"></i>
-                {% if nb_rdv_en_attente|default:0 > 0 %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="rdv-badge">
-                    {{ nb_rdv_en_attente|default:0 }}
-                    <span class="visually-hidden">nouvelles demandes de rendez-vous</span>
-                  </span>
-                {% endif %}
-              </a>
-            {% elif request.utilisateur.est_bibliothecaire %}
-              <a class="nav-link" href="{% url 'notifications' %}" title="Notifications (Bibliothécaire)">
-                <i class="bi bi-bell"></i>
-                {% if nb_notifications_biblio|default:0 > 0 %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ nb_notifications_biblio|default:0 }}
-                    <span class="visually-hidden">notifications non lues</span>
-                  </span>
-                {% endif %}
-              </a>
-            {% elif request.utilisateur.est_admin %}
-              <a class="nav-link" href="{% url 'administration_utilisateurs' %}" title="Administration">
-                <i class="bi bi-gear"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                  Admin
+            <a class="nav-link" href="{% url 'notifications' %}?from_bell=1" title="Notifications" id="notifications-link">
+              <i class="bi bi-bell"></i>
+              {% if request.utilisateur.est_bibliothecaire and nb_notifications_biblio > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
+                  {{ nb_notifications_biblio }}
+                  <span class="visually-hidden">nouvelles notifications</span>
                 </span>
-              </a>
-            {% else %}
-              <a class="nav-link" href="{% url 'mes_notifications' %}" title="Mes Notifications">
-                <i class="bi bi-bell"></i>
-                {% if nb_notifications_usager|default:0 > 0 %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ nb_notifications_usager|default:0 }}
-                    <span class="visually-hidden">notifications non lues</span>
-                  </span>
-                {% endif %}
-              </a>
-            {% endif %}
+              {% elif request.utilisateur.est_personnel and nb_notifications_personnel > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
+                  {{ nb_notifications_personnel }}
+                  <span class="visually-hidden">nouvelles notifications</span>
+                </span>
+              {% elif est_usager and nb_notifications_usager > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
+                  {{ nb_notifications_usager }}
+                  <span class="visually-hidden">nouvelles notifications</span>
+                </span>
+              {% endif %}
+            </a>
           </li>
 
           <!-- Menu Mon Compte -->
@@ -336,7 +275,7 @@
 <!-- Conteneur des notifications toast -->
 <div id="toast-container" class="toast-container"></div>
 
-<!-- Script pour suggestions dynamiques -->
+<!-- Script pour suggestions dynamiques + notifications -->
 <script>
   const searchInput = document.getElementById('search-input');
   const suggestionsList = document.getElementById('suggestions-list');
@@ -427,30 +366,31 @@
     }, duration);
   }
 
-
   // Fonction globale pour afficher des notifications depuis d'autres scripts
   window.showNotification = showToast;
 
-  // Masquer les notifications après le clic
+  // ✅ Masquer badge et mettre à jour compteur au clic
   document.addEventListener('DOMContentLoaded', function() {
-    // Masquer toutes les notifications avec badge
-    const notificationLinks = document.querySelectorAll('a .badge');
-    notificationLinks.forEach(badge => {
-      const link = badge.closest('a');
-      if (link) {
-        link.addEventListener('click', function() {
-          // Animation de disparition
-          badge.style.transition = 'opacity 0.3s ease';
-          badge.style.opacity = '0';
-          
-          // Supprimer après l'animation
-          setTimeout(() => {
-            if (badge.parentNode) {
-              badge.remove();
-            }
-          }, 300);
-        });
-      }
-    });
+    const notificationsLink = document.getElementById('notifications-link');
+    const badge = document.getElementById('notifications-badge');
+
+    if (notificationsLink && badge) {
+      notificationsLink.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Faire disparaître le badge visuellement
+        badge.style.transition = 'opacity 0.3s ease';
+        badge.style.opacity = '0';
+
+        setTimeout(() => {
+          if (badge.parentNode) {
+            badge.remove();
+          }
+        }, 300);
+
+        // Redirection après le clic
+        window.location.href = this.getAttribute('href');
+      });
+    }
   });
 </script>

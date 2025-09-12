@@ -12,10 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from django.contrib.messages import constants as messages
-
-
-
-
+# Configuration Supabase (temporaire - sans .env)
+SUPABASE_URL = 'https://cfgxxawxmscsrtjsorkp.supabase.co'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnh4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY0MzQwMDAsImV4cCI6MjA1MjAxMDAwMH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8'
+SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnh4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNjQzNDAwMCwiZXhwIjoyMDUyMDEwMDAwfQ.ServiceKeyServiceKeyServiceKeyServiceKeyServiceKeyServiceKey'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'bibliotheque',
     'django_extensions',
     'comptes',
-    'widget_tweaks',
 ]
 
 
@@ -102,9 +101,14 @@ WSGI_APPLICATION = 'bibliotech.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': 'aws-1-eu-west-3.pooler.supabase.com',
+        'NAME': 'postgres',
+        'USER': 'postgres.cfgxxawxmscsrtjsorkp',
+        'PASSWORD': 'azerty1234',
+        'PORT': 5432,
     }
 }
 
@@ -144,3 +148,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuration Supabase (déjà définie en haut du fichier)
+

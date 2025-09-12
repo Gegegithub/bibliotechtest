@@ -1,29 +1,67 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.utils import timezone
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Case, When, Value, IntegerField, Count, Avg, F, Q
+from django.db.models.functions import TruncDate
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date, timedelta
-from .forms import InscriptionForm, ConnexionForm, RendezVousForm, RendezVousUpdateForm
-from .models import Utilisateur, RendezVous, Notification
+import matplotlib
+matplotlib.use('Agg')  # Backend non-interactif pour éviter les problèmes Tcl/Tk
+import matplotlib.pyplot as plt
+import io
+import base64
+from .models import (
+    Utilisateur, RendezVous, Notification
+)
 from bibliotheque.models import Livre
+from .forms import InscriptionForm, ConnexionForm, RendezVousForm, RendezVousUpdateForm
 from .middleware import login_requis, permission_requise
+from .supabase_service import SupabaseService
+
+# Alias pour la compatibilité avec le code existant
+Usager = Utilisateur
+
 
 
 def inscription(request):
     if request.method == "POST":
         form = InscriptionForm(request.POST, request.FILES)
         if form.is_valid():
-            utilisateur = form.save()
-            # Créer une session pour l'utilisateur
-            request.session['utilisateur_id'] = utilisateur.id
-            messages.success(request, "Inscription réussie ! Vous pouvez maintenant vous connecter.")
-            return redirect('connexion')
+            # Préparer les données pour Supabase
+            user_data = {
+                "nom": form.cleaned_data['nom'],
+                "prenom": form.cleaned_data['prenom'],
+                "adresse": form.cleaned_data.get('adresse', ''),
+                "telephone": form.cleaned_data.get('telephone', ''),
+                "secteur_activite": form.cleaned_data.get('secteur_activite', ''),
+                "institution": form.cleaned_data.get('institution', ''),
+                "profil": form.cleaned_data.get('type_utilisateur', 'etudiant'),
+                "profession": form.cleaned_data.get('profession', ''),
+                "is_admin": False,
+                "is_administration": False,
+                "is_librarian": False,
+                "is_user": True
+            }
+            
+            # Utiliser Supabase pour l'inscription
+            supabase_service = SupabaseService()
+            result = supabase_service.sign_up(
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['mot_de_passe'],
+                user_data=user_data
+            )
+            
+            if result['success']:
+                messages.success(request, "Inscription réussie ! Vous pouvez maintenant vous connecter.")
+                return redirect('connexion')
+            else:
+                messages.error(request, f"Erreur lors de l'inscription: {result['error']}")
         else:
             messages.error(request, "Veuillez corriger les erreurs du formulaire.")
     else:
@@ -38,30 +76,38 @@ def connexion(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             mot_de_passe = form.cleaned_data['mot_de_passe']
-            try:
-                utilisateur = Utilisateur.objects.get(email=email)
-                if utilisateur.check_password(mot_de_passe):
-                    # Mettre à jour la dernière connexion
-                    utilisateur.derniere_connexion = timezone.now()
-                    utilisateur.save()
-                    # Créer une session pour l'utilisateur
-                    request.session['utilisateur_id'] = utilisateur.id
-                    messages.success(request, "Vous êtes bien connecté(e) !")
-                    
-                    next_url = request.POST.get('next') or request.GET.get('next')
-                    if next_url:
-                        return redirect(next_url)
-                    else:
-                        return redirect('accueil')
+            
+            # Utiliser Supabase pour la connexion
+            supabase_service = SupabaseService()
+            result = supabase_service.sign_in(email, mot_de_passe)
+            
+            if result['success']:
+                # Créer une session pour l'utilisateur avec les données Supabase
+                request.session['utilisateur_id'] = result['user'].id
+                request.session['utilisateur_email'] = result['user'].email
+                request.session['utilisateur_profile'] = result['profile']
+                
+                # Message de connexion
+                messages.success(request, "Vous êtes bien connecté(e) !", extra_tags='connexion')
+                
+                next_url = request.POST.get('next') or request.GET.get('next')
+                if next_url:
+                    return redirect(next_url)
                 else:
-                    messages.error(request, "Email ou mot de passe invalide.")
-            except Utilisateur.DoesNotExist:
-                messages.error(request, "Email ou mot de passe invalide.")
+                    return redirect('accueil')
+            else:
+                messages.error(request, f"Erreur de connexion: {result['error']}")
     else:
         form = ConnexionForm()
 
     next_url = request.GET.get('next', '')
     return render(request, 'connexion.html', {'form': form, 'next': next_url})
+
+def password_reset(request):
+    # logique pour envoyer un lien de réinitialisation via Supabase
+    return render(request, 'password_reset.html')
+
+
 
 
 def Connexion(request):
@@ -162,10 +208,19 @@ def rendez_vous(request):
 @login_requis
 @permission_requise('personnel')
 def gestion_rendezvous(request):
-    # Récupérer tous les rendez-vous, triés par date
+    notif_id = request.GET.get("notif_id")
+
+    if notif_id:  
+        try:
+            notif = Notification.objects.get(id=notif_id)
+            notif.is_read = True  # ✅ On marque comme lue
+            notif.save()
+        except Notification.DoesNotExist:
+            pass
+
+    # Récupérer les rendez-vous
     rdvs = RendezVous.objects.all().order_by('date_souhaitee')
 
-    # Initialiser les groupes par statut
     groupes = {
         'En attente': [],
         'Confirmés': [],
@@ -173,7 +228,6 @@ def gestion_rendezvous(request):
         'Annulés': [],
     }
 
-    # Parcourir tous les rdvs et les ajouter dans le groupe correspondant
     for rdv in rdvs:
         statut = rdv.statut.lower()
         if statut == 'en_attente':
@@ -185,11 +239,9 @@ def gestion_rendezvous(request):
         elif statut == 'annule':
             groupes['Annulés'].append(rdv)
 
-    # Passer les groupes au template
     context = {
         'groupes': groupes
     }
-
     return render(request, 'gestion_rendezvous.html', context)
 
 
@@ -205,19 +257,19 @@ def modifier_rdv(request, id):
     rdv = get_object_or_404(RendezVous, id=id)
 
     if request.method == "POST":
-        # 1️⃣ Récupérer le statut et la date du formulaire
+        # 1️ Récupérer le statut et la date du formulaire
         nouveau_statut = request.POST.get("statut")
         date_souhaitee = request.POST.get("date_souhaitee")
 
         if date_souhaitee:
             rdv.date_souhaitee = date_souhaitee
 
-        # 2️⃣ Vérifier le statut précédent
+        # 2️ Vérifier le statut précédent
         statut_precedent = rdv.statut
         rdv.statut = nouveau_statut
         rdv.save()
         
-        # 🔹 Déterminer le titre et l’auteur à afficher
+        #  Déterminer le titre et l’auteur à afficher
         if rdv.livre:
             titre_ouvrage = rdv.livre.titre
             auteur_ouvrage = rdv.livre.auteur
@@ -225,7 +277,7 @@ def modifier_rdv(request, id):
             titre_ouvrage = rdv.titre_ouvrage or "non spécifié"
             auteur_ouvrage = getattr(rdv, "auteur_ouvrage", "non spécifié")
 
-        # ✅ 3️⃣ Créer une notification pour l'UTILISATEUR concerné
+        # 3 Créer une notification pour l'UTILISATEUR concerné
         Notification.objects.create(
             utilisateur=rdv.utilisateur,
             message=(
@@ -236,7 +288,7 @@ def modifier_rdv(request, id):
             url=reverse("mes_rendezvous")
         )
 
-        # 4️⃣ Créer une notification pour les bibliothécaires si le RDV est confirmé
+        # 4️ Créer une notification pour les bibliothécaires si le RDV est confirmé
         if statut_precedent == "en_attente" and nouveau_statut.lower() in ["confirme", "confirmé"]:
             bibliothecaires = Utilisateur.objects.filter(est_bibliothecaire=True)
             for biblio in bibliothecaires:
@@ -246,10 +298,10 @@ def modifier_rdv(request, id):
                     url=reverse('gestion_rdv_bibliothecaire')
                 )
 
-        # 5️⃣ Rediriger vers la gestion des rendez-vous
+        # 5️ Rediriger vers la gestion des rendez-vous
         return redirect('gestion_rendezvous')
 
-    # 6️⃣ GET : afficher le formulaire de modification
+    # 6️ GET : afficher le formulaire de modification
     return render(request, "modifier_rdv.html", {"rdv": rdv})
 
 
@@ -355,13 +407,18 @@ def confirmer_rendezvous(request, rendezvous_id):
 
 @login_requis
 def notifications(request):
-    # Vérifie le groupe
-    if not request.utilisateur.est_bibliothecaire:
-        return HttpResponseForbidden("Vous n'êtes pas autorisé à accéder à cette page.")
-
-    notifs = request.utilisateur.notifications.filter(lu=False).order_by('-created_at')
+    # Récupérer toutes les notifications de l'utilisateur
+    notifs = request.utilisateur.notifications.all().order_by('-created_at')
     
-    return render(request, "notifications.html", {"notifications": notifs})
+    # Marquer les notifications comme lues si c'est un clic depuis la cloche
+    if request.GET.get('from_bell') == '1':
+        notifs.filter(lu=False).update(lu=True)
+    
+    return render(request, "notifications.html", {
+        "notifications": notifs,
+        "est_bibliothecaire": request.utilisateur.est_bibliothecaire,
+        "est_personnel": request.utilisateur.est_personnel
+    })
 
 @login_requis
 def notifications_usager(request):
@@ -451,6 +508,13 @@ def notifications_counts(request):
         "nb_notifications_personnel": nb_notifications_personnel,
         "nb_notifications_usager": nb_notifications_usager
     }
+    
+def notifications_context(request):
+    if request.user.is_authenticated:
+        notif_count = Notification.objects.filter(is_read=False).count()
+        return {'notif_count': notif_count}
+    return {}
+
 
 
 
@@ -525,7 +589,11 @@ def notification_marquer_lue(request, notif_id):
     notif.lu = True
     notif.save()
     
-    # Redirection selon le groupe de l'utilisateur
+    # Si c'est une requête AJAX, retourner une réponse JSON
+    if request.headers.get('Content-Type') == 'application/json' or request.method == 'POST':
+        return JsonResponse({'success': True, 'message': 'Notification marquée comme lue'})
+    
+    # Redirection selon le groupe de l'utilisateur (pour les requêtes normales)
     if request.utilisateur.est_personnel:
         return redirect('gestion_rendezvous')  # page admin
     elif request.utilisateur.est_bibliothecaire:
@@ -591,111 +659,93 @@ def tableau_de_bord(request):
         return HttpResponseForbidden("Accès refusé : réservé au personnel autorisé.")
 
     today = date.today()
-    last_week = today - timedelta(days=7)
+    start_week = today - timedelta(days=today.weekday())  # lundi de la semaine
+    start_month = today.replace(day=1)  # premier jour du mois
+    prev_month = (start_month - timedelta(days=1)).replace(day=1)  # début du mois précédent
 
-    # -------------------
-    # 1️⃣ Usagers actifs
-    # -------------------
-    total_usagers_actifs = Utilisateur.objects.filter(
-        rendezvous__isnull=False
-    ).distinct().count()
+    data = {}
 
-    # -------------------
-    # 2️⃣ Nombre de livres empruntés par jour (7 derniers jours)
-    # -------------------
-    flux_journalier = (
-        RendezVous.objects.filter(date_souhaitee__gte=last_week)
-        .values('date_souhaitee')
-        .annotate(count=Count('id'))
-        .order_by('date_souhaitee')
-    )
-
-    # -------------------
-    # 3️⃣ Temps moyen d'emprunt / rendez-vous
-    # -------------------
-    rdvs_today = RendezVous.objects.filter(date_souhaitee=today)
-    avg_duree = (
-        sum(
-            (rdv.heure_sortie - rdv.heure_entree).total_seconds() / 60
-            for rdv in rdvs_today
-            if rdv.heure_sortie and rdv.heure_entree
-        ) / max(rdvs_today.count(), 1)
-    )
-
-    # -------------------
-    # 4️⃣ Livres les plus populaires
-    # -------------------
-    top_livres = (
-        RendezVous.objects.values('livre__titre')
-        .annotate(nb_emprunts=Count('id'))
-        .order_by('-nb_emprunts')[:5]
-    )
-
-    # -------------------
-    # 5️⃣ Livres peu empruntés
-    # -------------------
-    seuil_peu_emprunte = 2
-    livres_peu_empruntes = (
-        Livre.objects.annotate(nb_rdv=Count('rendezvous'))
-        .filter(nb_rdv__lte=seuil_peu_emprunte)
-    )
-
-    # -------------------
-    # 6️⃣ Taux d'occupation par catégorie
-    # -------------------
-    rdv_par_categorie = (
-        RendezVous.objects.values('livre__categorie__nom')
-        .annotate(count=Count('id'))
-    )
-    total_rdv = RendezVous.objects.count()
-    taux_occupation_categorie = [
-        {
-            'categorie': c['livre__categorie__nom'],
-            'pourcentage': round((c['count'] / max(total_rdv, 1)) * 100, 1)
-        }
-        for c in rdv_par_categorie
-    ]
-
-    # -------------------
-    # 7️⃣ Rendez-vous annulés ou manqués
-    # -------------------
-    rdv_non_honores = RendezVous.objects.filter(
-        Q(statut='annule') | Q(statut='termine')
+    # 🔹 Taux de fréquentation
+    usagers_classiques = Utilisateur.objects.filter(
+        est_admin=False,
+        est_bibliothecaire=False,
+        est_personnel=False
     ).count()
 
-    # -------------------
-    # 8️⃣ Nombre d'usagers par type
-    # -------------------
-    usagers_par_type = (
-        Utilisateur.objects.values('type_utilisateur')
-        .annotate(count=Count('id'))
-    )
+    # Simplification : utiliser les rendez-vous comme indicateur d'activité
+    rdvs_auj = RendezVous.objects.filter(date_souhaitee=today).count()
+    taux_frequentation = round((rdvs_auj / max(usagers_classiques, 1) * 100) if usagers_classiques > 0 else 0, 2)
 
-    # -------------------
-    # 9️⃣ Flux de visiteurs par jour/semaine
-    # -------------------
-    flux_semaine = (
-        RendezVous.objects.filter(date_souhaitee__gte=last_week)
-        .extra({'day': "date(date_souhaitee)"})
-        .values('day')
-        .annotate(count=Count('id'))
-        .order_by('day')
-    )
-
-    context = {
-        'total_usagers_actifs': total_usagers_actifs,
-        'flux_journalier': flux_journalier,
-        'avg_duree': round(avg_duree, 1),
-        'top_livres': top_livres,
-        'livres_peu_empruntes': livres_peu_empruntes,
-        'taux_occupation_categorie': taux_occupation_categorie,
-        'rdv_non_honores': rdv_non_honores,
-        'usagers_par_type': usagers_par_type,
-        'flux_semaine': flux_semaine,
+    # 🔹 Jour
+    data["jour"] = {
+        "new_inscriptions": Utilisateur.objects.filter(date_inscription__date=today).count(),
+        "livres_empruntes": RendezVous.objects.filter(date_souhaitee=today).count(),
+        "rdv_pris": RendezVous.objects.filter(date_souhaitee=today).count(),
+        "taux_frequentation": taux_frequentation,
     }
 
-    return render(request, "dashboard.html", context)
+    # 🔹 Semaine
+    comparaison_jours = list(
+        RendezVous.objects.filter(date_souhaitee__gte=start_week)
+        .values("date_souhaitee")
+        .annotate(nb_rdv=Count("id"))
+        .order_by("date_souhaitee")
+    )
+    for jour in comparaison_jours:
+        jour["nom_jour_date"] = jour["date_souhaitee"].strftime("%A %d %B")
 
+    top_livres = list(
+        RendezVous.objects.filter(date_souhaitee__gte=start_week)
+        .values("livre__titre")
+        .annotate(nb_emprunts=Count("id"))
+        .order_by("-nb_emprunts")[:5]
+    )
+
+    data["semaine"] = {
+        "total_inscriptions": Utilisateur.objects.filter(date_inscription__date__gte=start_week).count(),
+        "livres_empruntes": RendezVous.objects.filter(date_souhaitee__gte=start_week).count(),
+        "comparaison_jours": comparaison_jours,
+        "livres_ajoutes": Livre.objects.filter(created_at__gte=start_week).count(),
+        "top_livres": top_livres,
+    }
+
+    # 🔹 Mois
+    repartition_cats = list(
+        RendezVous.objects.filter(date_souhaitee__gte=start_month)
+        .values("livre__categorie__nom")
+        .annotate(nb_emprunts=Count("id"))
+        .order_by("-nb_emprunts")
+    )
+
+    repartition_usagers = list(
+        Utilisateur.objects.filter(
+            rendezvous__date_souhaitee__gte=start_month
+        )
+        .values("type_utilisateur")
+        .annotate(nb_usagers=Count("id", distinct=True))
+    )
+
+    data["mois"] = {
+        "total_inscriptions": Utilisateur.objects.filter(date_inscription__date__gte=start_month).count(),
+        "total_emprunts": RendezVous.objects.filter(date_souhaitee__gte=start_month).count(),
+        "repartition_cats": repartition_cats,
+        "repartition_usagers": repartition_usagers,
+        "taux_rdv_honores": 0,
+        "comparaison_mois_prec": {
+            "inscriptions": (
+                Utilisateur.objects.filter(date_inscription__date__gte=start_month).count()
+                - Utilisateur.objects.filter(date_inscription__date__gte=prev_month,
+                                        date_inscription__date__lt=start_month).count()
+            ),
+            "emprunts": (
+                RendezVous.objects.filter(date_souhaitee__gte=start_month).count()
+                - RendezVous.objects.filter(date_souhaitee__gte=prev_month,
+                                            date_souhaitee__lt=start_month).count()
+            ),
+        },
+    }
+
+    return render(request, "dashboard.html", {"data": data})
 
 @login_requis
 def administration_utilisateurs(request):
@@ -777,40 +827,127 @@ def administration_utilisateurs(request):
     return render(request, 'administration_utilisateurs.html', context)
 
 
+@login_requis
 def generer_rapport_pdf(request):
     today = date.today()
-    last_week = today - timedelta(days=7)
+    start_week = today - timedelta(days=today.weekday())
+    start_month = today.replace(day=1)
+    prev_month = (start_month - timedelta(days=1)).replace(day=1)
 
-    # Données du dashboard
-    total_usagers_actifs = Utilisateur.objects.filter(rendezvous__isnull=False).distinct().count()
-    flux_journalier = RendezVous.objects.filter(date_souhaitee=today)
-    top_livres = (
-        RendezVous.objects.values('livre__titre')
-        .annotate(nb_emprunts=Count('id'))
-        .order_by('-nb_emprunts')[:5]
-    )
-    usagers_par_type = (
-        Utilisateur.objects.values('profilutilisateur__type_utilisateur')
-        .annotate(count=Count('id'))
-    )
+    # 🔹 Reprendre exactement les mêmes calculs que dans le dashboard
+    usagers_classiques = Utilisateur.objects.filter(
+        est_admin=False,
+        est_bibliothecaire=False,
+        est_personnel=False
+    ).count()
 
-    context = {
-        'total_usagers_actifs': total_usagers_actifs,
-        'flux_journalier': flux_journalier,
-        'top_livres': top_livres,
-        'usagers_par_type': usagers_par_type,
+    # Simplification : utiliser les rendez-vous comme indicateur d'activité
+    rdvs_auj = RendezVous.objects.filter(date_souhaitee=today).count()
+    taux_frequentation = (rdvs_auj / max(usagers_classiques, 1) * 100) if usagers_classiques > 0 else 0
+
+    # 🔹 KPIs jour, semaine, mois
+    data = {}
+    data["jour"] = {
+        "new_inscriptions": Utilisateur.objects.filter(date_inscription__date=today).count(),
+        "livres_empruntes": RendezVous.objects.filter(date_souhaitee=today).count(),
+        "rdv_pris": RendezVous.objects.filter(date_souhaitee=today).count(),
+        "taux_frequentation": round(taux_frequentation, 2),
+    }
+    data["semaine"] = {
+        "total_inscriptions": Utilisateur.objects.filter(date_inscription__date__gte=start_week).count(),
+        "livres_empruntes": RendezVous.objects.filter(date_souhaitee__gte=start_week).count(),
+        "comparaison_jours": list(
+         RendezVous.objects.filter(date_creation__date__gte=start_week)
+            .annotate(jour=TruncDate("date_creation"))
+            .values("jour")
+            .annotate(nb_rdv=Count("id"))
+            .order_by("jour")
+         ),
+        "livres_ajoutes": Livre.objects.filter(created_at__gte=start_week).count(),
+        "top_livres": list(
+            RendezVous.objects.filter(date_souhaitee__gte=start_week)
+            .values("livre__titre")
+            .annotate(nb_emprunts=Count("id"))
+            .order_by("-nb_emprunts")[:5]
+        ),
+    }
+    data["mois"] = {
+        "total_inscriptions": Utilisateur.objects.filter(date_inscription__date__gte=start_month).count(),
+        "total_emprunts": RendezVous.objects.filter(date_souhaitee__gte=start_month).count(),
+        "repartition_cats": list(
+            RendezVous.objects.filter(date_souhaitee__gte=start_month)
+            .values("livre__categorie__nom")
+            .annotate(nb_emprunts=Count("id"))
+            .order_by("-nb_emprunts")
+        ),
+        "repartition_usagers": list(
+            Utilisateur.objects.filter(
+                rendezvous__date_souhaitee__gte=start_month
+            )
+            .values("type_utilisateur")
+            .annotate(nb_usagers=Count("id", distinct=True))
+        ),
+        "taux_rdv_honores": 0,  # à compléter si tu as un champ statut
+        "comparaison_mois_prec": {
+            "inscriptions": (
+                Utilisateur.objects.filter(date_inscription__date__gte=start_month).count()
+                - Utilisateur.objects.filter(date_inscription__date__gte=prev_month,
+                                        date_inscription__date__lt=start_month).count()
+            ),
+            "emprunts": (
+                RendezVous.objects.filter(date_souhaitee__gte=start_month).count()
+                - RendezVous.objects.filter(date_souhaitee__gte=prev_month,
+                                            date_souhaitee__lt=start_month).count()
+            ),
+        },
     }
 
-    # Génération du HTML
-    html_string = render_to_string('rapport.html', context)
+    # 🔹 Graphiques pour le PDF
+    # Top livres semaine
+    top_livres = data["semaine"]["top_livres"]
+    titres = [l['livre__titre'] for l in top_livres]
+    nb_emprunts = [l['nb_emprunts'] for l in top_livres]
 
-    # Création du PDF
+    plt.figure(figsize=(6,4))
+    plt.bar(titres, nb_emprunts, color='#0d6efd')
+    plt.title("Top 5 livres empruntés cette semaine")
+    plt.xticks(rotation=20, ha='right')
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    top_livres_img = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    plt.close()
+
+    # Répartition usagers mois
+    types_usagers = [u['type_utilisateur'] for u in data["mois"]["repartition_usagers"]]
+    counts_usagers = [u['nb_usagers'] for u in data["mois"]["repartition_usagers"]]
+
+    plt.figure(figsize=(6,4))
+    plt.pie(counts_usagers, labels=types_usagers, autopct='%1.1f%%', startangle=90,
+            colors=['#0d6efd','#198754','#ffc107','#6f42c1','#fd7e14'])
+    plt.title("Répartition des usagers ce mois")
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    usagers_img = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    plt.close()
+
+    context = {
+        "today": today,
+        "data": data,
+        "top_livres_img": top_livres_img,
+        "usagers_img": usagers_img,
+    }
+
+    html_string = render_to_string("rapport.html", context)
     pdf = HTML(string=html_string).write_pdf()
-
-    response = HttpResponse(pdf, content_type='application/pdf')
+    response = HttpResponse(pdf, content_type="application/pdf")
     response['Content-Disposition'] = 'inline; filename="rapport_dashboard.pdf"'
     return response
-
 
 
 

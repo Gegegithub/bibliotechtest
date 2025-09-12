@@ -1,7 +1,5 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Categorie, Livre
-from comptes.models import Utilisateur
-from django.db.models import Q
+from django.shortcuts import render, redirect
+from comptes.supabase_service import SupabaseService
 from django.http import JsonResponse
 from django.contrib import messages
 from django.urls import reverse
@@ -9,48 +7,28 @@ from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 from .forms import CategorieForm, LivreForm
 from comptes.middleware import login_requis, permission_requise
-import wikipedia
-wikipedia.set_lang("fr")  # pour le français
 
 def home(request):
     """
-    Vue d'accueil avec gestion robuste des cas où les tables n'existent pas encore
+    Vue d'accueil utilisant Supabase
     """
-    # Vérification de l'existence des tables et récupération des données
-    from django.db import connection
-    
-    # Vérifier si la table Categorie existe
     try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bibliotheque_categorie'")
-        table_categorie_exists = cursor.fetchone() is not None
+        # Utiliser Supabase pour récupérer les données
+        supabase_service = SupabaseService()
         
-        if table_categorie_exists:
-            list_categories = Categorie.objects.all()
-            categories_existent = list_categories.exists()
-        else:
-            list_categories = []
-            categories_existent = False
-            
-    except Exception:
+        # Récupérer les catégories depuis Supabase
+        list_categories = supabase_service.get_all_categories()
+        categories_existent = len(list_categories) > 0
+        
+        # Récupérer les livres depuis Supabase
+        list_livres = supabase_service.get_all_livres()
+        livres_existent = len(list_livres) > 0
+        
+    except Exception as e:
+        print(f"Erreur lors de la récupération des données: {e}")
         list_categories = []
-        categories_existent = False
-    
-    # Vérifier si la table Livre existe
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bibliotheque_livre'")
-        table_livre_exists = cursor.fetchone() is not None
-        
-        if table_livre_exists:
-            list_livres = Livre.objects.all()
-            livres_existent = list_livres.exists()
-        else:
-            list_livres = []
-            livres_existent = False
-            
-    except Exception:
         list_livres = []
+        categories_existent = False
         livres_existent = False
     
     # Gestion robuste de est_bibliothecaire
@@ -72,23 +50,43 @@ def ajouter_categorie(request):
     if request.method == "POST":
         form = CategorieForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Catégorie ajoutée avec succès !")
-            return redirect('catalogue')  # redirige vers le catalogue
+            # Préparer les données pour Supabase
+            categorie_data = {
+                "nom": form.cleaned_data['nom'],
+                "image": form.cleaned_data.get('image', None)
+            }
+            
+            # Utiliser Supabase pour créer la catégorie
+            supabase_service = SupabaseService()
+            result = supabase_service.create_categorie(categorie_data)
+            
+            if result:
+                messages.success(request, "Catégorie ajoutée avec succès !")
+                return redirect('accueil')
+            else:
+                messages.error(request, "Erreur lors de l'ajout de la catégorie.")
     else:
         form = CategorieForm()
     return render(request, 'ajouter_categorie.html', {'form': form})
 
 def details_categorie(request, categorie_id):
-    categorie = get_object_or_404(Categorie, id=categorie_id)
-    
-    # Récupération des livres avec gestion des cas vides
     try:
-        livres = Livre.objects.filter(categorie=categorie)
-        livres_existent = livres.exists()
-    except Exception:
-        livres = []
-        livres_existent = False
+        # Utiliser Supabase pour récupérer la catégorie
+        supabase_service = SupabaseService()
+        categorie = supabase_service.get_categorie_by_id(categorie_id)
+        
+        if not categorie:
+            messages.error(request, "Catégorie non trouvée.")
+            return redirect('accueil')
+        
+        # Récupérer les livres de cette catégorie
+        livres = supabase_service.get_livres_by_categorie(categorie_id)
+        livres_existent = len(livres) > 0
+        
+    except Exception as e:
+        print(f"Erreur lors de la récupération des données: {e}")
+        messages.error(request, "Erreur lors du chargement de la catégorie.")
+        return redirect('accueil')
     
     # Gestion robuste de est_bibliothecaire
     if hasattr(request, 'utilisateur') and request.utilisateur:
@@ -228,8 +226,8 @@ def recherche(request):
             if query:
                 resultats = resultats.filter(
                     Q(titre__icontains=query) |
-                    Q(auteur__nom__icontains=query) |
-                    Q(auteur__prenom__icontains=query) |
+                    Q(auteur_nom_icontains=query) |
+                    Q(auteur_prenom_icontains=query) |
                     Q(description__icontains=query)
                 )
         else:
@@ -261,7 +259,7 @@ def recherche_suggestions(request):
             if table_livre_exists:
                 livres = Livre.objects.filter(titre__icontains=query)[:5]
                 auteurs_livres = Livre.objects.filter(
-                    Q(auteur__nom__icontains=query) | Q(auteur__prenom__icontains=query)
+                    Q(auteur_nomicontains=query) | Q(auteurprenom_icontains=query)
                 )[:5]
 
                 auteurs = []
@@ -372,8 +370,3 @@ def mes_favoris(request):
     utilisateur = request.utilisateur
     favoris = utilisateur.favoris.all()
     return render(request, 'mes_favoris.html', {'favoris': favoris})
-
-
-
-
-

@@ -18,11 +18,13 @@ regex==2024.11.6
 requests==2.32.4
 soupsieve==2.8
 sqlparse==0.5.3
+supabase==2.3.4
 tinycss2==1.4.0
 tinyhtml5==2.0.0
 typing_extensions==4.15.0
 tzdata==2025.2
-urllib3==2.5.0weasyprint==66.0
+urllib3==2.5.0
+weasyprint==66.0
 webencodings==0.5.1
 wikipedia==1.4.0
 zopfli==0.2.3.post1

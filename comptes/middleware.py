@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Utilisateur
+from .supabase_service import SupabaseService
 from functools import wraps
 
 class AuthentificationMiddleware:
@@ -8,12 +8,31 @@ class AuthentificationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Vérifier si l'utilisateur est connecté
+        # Vérifier si l'utilisateur est connecté via Supabase
         utilisateur_id = request.session.get('utilisateur_id')
         if utilisateur_id:
             try:
-                request.utilisateur = Utilisateur.objects.get(id=utilisateur_id)
-            except Utilisateur.DoesNotExist:
+                # Récupérer le profil depuis Supabase
+                supabase_service = SupabaseService()
+                profile = supabase_service.get_profile_by_id(utilisateur_id)
+                
+                if profile:
+                    # Créer un objet utilisateur simulé pour la compatibilité
+                    request.utilisateur = type('Utilisateur', (), {
+                        'id': profile['id'],
+                        'email': profile['email'],
+                        'nom': profile['nom'],
+                        'prenom': profile['prenom'],
+                        'est_bibliothecaire': profile.get('is_librarian', False),
+                        'est_personnel': profile.get('is_administration', False),
+                        'est_admin': profile.get('is_admin', False),
+                        'est_actif': True
+                    })()
+                else:
+                    del request.session['utilisateur_id']
+                    request.utilisateur = None
+            except Exception as e:
+                print(f"Erreur middleware auth: {e}")
                 del request.session['utilisateur_id']
                 request.utilisateur = None
         else:
