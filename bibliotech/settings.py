@@ -12,10 +12,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from django.contrib.messages import constants as messages
-# Configuration Supabase (temporaire - sans .env)
-SUPABASE_URL = 'https://cfgxxawxmscsrtjsorkp.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ3h4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyNDg1MDEsImV4cCI6MjA3MjgyNDUwMX0.uOsgCxLD3u1hjXmP6J_pTO8PfMwkHscFunRZf0HVc3w'
-SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ3h4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzI0ODUwMSwiZXhwIjoyMDcyODI0NTAxfQ.6NVk48TQkEiCGrs7eAx9XnUp7uwbPvrC9kmOeFzrBnU'
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
+
+# Configuration Supabase depuis les variables d'environnement
+SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://cfgxxawxmscsrtjsorkp.supabase.co')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
+SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+p!9n&!$8(5engu9mk_jqmpgr^jj@d8oq=4rwfs=*istaic08%'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-+p!9n&!$8(5engu9mk_jqmpgr^jj@d8oq=4rwfs=*istaic08%')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
