@@ -1,181 +1,146 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header text-center">
-                    <h3><i class="fas fa-user"></i> Inscription</h3>
-                </div>
-                <div class="card-body px-4">
-                    <form method="post" enctype="multipart/form-data" novalidate>
-                        {% csrf_token %}
-
-                        <!-- Informations de base -->
-                        <h4 class="mb-4">Informations personnelles</h4>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.prenom.id_for_label }}" class="form-label">Prénom</label>
-                                {{ form.prenom|add_class:"form-control" }}
-                                {% for error in form.prenom.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.nom.id_for_label }}" class="form-label">Nom</label>
-                                {{ form.nom|add_class:"form-control" }}
-                                {% for error in form.nom.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                            {{ form.email|add_class:"form-control" }}
-                            {% for error in form.email.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                            {% if form.email.help_text %}
-                                <div class="form-text">{{ form.email.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Mot de passe -->
-                        <div class="mb-3 position-relative">
-                            <label for="{{ form.mot_de_passe.id_for_label }}" class="form-label">Mot de passe</label>
-                            <div class="input-group">
-                                {{ form.mot_de_passe|add_class:"form-control" }}
-                                <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.mot_de_passe.id_for_label }}', this)">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                            {% for error in form.mot_de_passe.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-4 position-relative">
-                            <label for="{{ form.confirmer_mot_de_passe.id_for_label }}" class="form-label">Confirmer le mot de passe</label>
-                            <div class="input-group">
-                                {{ form.confirmer_mot_de_passe|add_class:"form-control" }}
-                                <span class="input-group-text bg-transparent border-start-0" style="cursor: pointer;" onclick="togglePassword('{{ form.confirmer_mot_de_passe.id_for_label }}', this)">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                            {% for error in form.confirmer_mot_de_passe.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Informations complémentaires -->
-                        <h4 class="mb-4">Informations complémentaires</h4>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.type_utilisateur.id_for_label }}" class="form-label">Type d'utilisateur</label>
-                            {{ form.type_utilisateur|add_class:"form-control" }}
-                            {% for error in form.type_utilisateur.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                            {% if form.type_utilisateur.help_text %}
-                                <div class="form-text">{{ form.type_utilisateur.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.profession.id_for_label }}" class="form-label">Profession</label>
-                                {{ form.profession|add_class:"form-control" }}
-                                {% for error in form.profession.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                                {% if form.profession.help_text %}
-                                    <div class="form-text">{{ form.profession.help_text }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.institution.id_for_label }}" class="form-label">Institution</label>
-                                {{ form.institution|add_class:"form-control" }}
-                                {% for error in form.institution.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                                {% if form.institution.help_text %}
-                                    <div class="form-text">{{ form.institution.help_text }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.secteur_activite.id_for_label }}" class="form-label">Secteur d'activité</label>
-                            {{ form.secteur_activite|add_class:"form-control" }}
-                            {% for error in form.secteur_activite.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                            {% if form.secteur_activite.help_text %}
-                                <div class="form-text">{{ form.secteur_activite.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.telephone.id_for_label }}" class="form-label">Téléphone</label>
-                            {{ form.telephone|add_class:"form-control" }}
-                            {% for error in form.telephone.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.adresse.id_for_label }}" class="form-label">Adresse</label>
-                            {{ form.adresse|add_class:"form-control" }}
-                            {% for error in form.adresse.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="{{ form.photo.id_for_label }}" class="form-label">Photo de profil</label>
-                            {{ form.photo }}
-                            {% for error in form.photo.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                            {% if form.photo.help_text %}
-                                <div class="form-text">{{ form.photo.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">S'inscrire</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white text-center">
+          <h4 class="mb-0">Inscription</h4>
         </div>
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+              <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                     id="{{ form.email.id_for_label }}" required>
+              {% if form.email.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.email.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.mot_de_passe.id_for_label }}" class="form-label">Mot de passe</label>
+              <input type="password" name="mot_de_passe" class="form-control {% if form.mot_de_passe.errors %}is-invalid{% endif %}"
+                     id="{{ form.mot_de_passe.id_for_label }}" required>
+              {% if form.mot_de_passe.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.mot_de_passe.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.confirmation_mot_de_passe.id_for_label }}" class="form-label">Confirmer le mot de passe</label>
+              <input type="password" name="confirmation_mot_de_passe" class="form-control {% if form.confirmation_mot_de_passe.errors %}is-invalid{% endif %}"
+                     id="{{ form.confirmation_mot_de_passe.id_for_label }}" required>
+              {% if form.confirmation_mot_de_passe.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.confirmation_mot_de_passe.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.nom.id_for_label }}" class="form-label">Nom</label>
+              <input type="text" name="nom" class="form-control {% if form.nom.errors %}is-invalid{% endif %}"
+                     id="{{ form.nom.id_for_label }}" required>
+              {% if form.nom.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.nom.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.prenom.id_for_label }}" class="form-label">Prénom</label>
+              <input type="text" name="prenom" class="form-control {% if form.prenom.errors %}is-invalid{% endif %}"
+                     id="{{ form.prenom.id_for_label }}" required>
+              {% if form.prenom.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.prenom.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.type_utilisateur.id_for_label }}" class="form-label">Type d'utilisateur</label>
+              <select name="type_utilisateur" class="form-select {% if form.type_utilisateur.errors %}is-invalid{% endif %}"
+                      id="{{ form.type_utilisateur.id_for_label }}" required>
+                <option value="">Sélectionnez...</option>
+                <option value="etudiant">Étudiant</option>
+                <option value="enseignant">Enseignant</option>
+                <option value="chercheur">Chercheur</option>
+                <option value="autre">Autre</option>
+              </select>
+              {% if form.type_utilisateur.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.type_utilisateur.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.telephone.id_for_label }}" class="form-label">Téléphone</label>
+              <input type="tel" name="telephone" class="form-control {% if form.telephone.errors %}is-invalid{% endif %}"
+                     id="{{ form.telephone.id_for_label }}">
+              {% if form.telephone.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.telephone.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.adresse.id_for_label }}" class="form-label">Adresse</label>
+              <textarea name="adresse" class="form-control {% if form.adresse.errors %}is-invalid{% endif %}"
+                        id="{{ form.adresse.id_for_label }}" rows="2"></textarea>
+              {% if form.adresse.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.adresse.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">S'inscrire</button>
+            </div>
+          </form>
+
+          <div class="mt-3 text-center">
+            <p>Déjà inscrit ? <a href="{% url 'connexion' %}">Se connecter</a></p>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
-
-<!-- Script pour afficher/masquer le mot de passe -->
-<script>
-function togglePassword(id, el) {
-    const input = document.getElementById(id);
-    const icon = el.querySelector('i');
-    if (input.type === "password") {
-        input.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        input.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-    }
-}
-</script>
-
-<style>
-textarea.form-control {
-    height: 100px;
-    resize: vertical;
-}
-</style>
 {% endblock %}

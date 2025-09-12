@@ -14,8 +14,8 @@ from pathlib import Path
 from django.contrib.messages import constants as messages
 # Configuration Supabase (temporaire - sans .env)
 SUPABASE_URL = 'https://cfgxxawxmscsrtjsorkp.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnh4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY0MzQwMDAsImV4cCI6MjA1MjAxMDAwMH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8'
-SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnh4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNjQzNDAwMCwiZXhwIjoyMDUyMDEwMDAwfQ.ServiceKeyServiceKeyServiceKeyServiceKeyServiceKeyServiceKey'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ3h4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyNDg1MDEsImV4cCI6MjA3MjgyNDUwMX0.uOsgCxLD3u1hjXmP6J_pTO8PfMwkHscFunRZf0HVc3w'
+SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ3h4YXd4bXNjc3J0anNvcmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzI0ODUwMSwiZXhwIjoyMDcyODI0NTAxfQ.6NVk48TQkEiCGrs7eAx9XnUp7uwbPvrC9kmOeFzrBnU'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,12 +36,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.messages',
+    'django.contrib.sessions',
     'bibliotheque',
-    'django_extensions',
     'comptes',
 ]
 
@@ -69,7 +67,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # Ajout du middleware de messages
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'comptes.middleware.AuthentificationMiddleware',
 ]
@@ -79,16 +77,16 @@ ROOT_URLCONF = 'bibliotech.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'bibliothèque' / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'bibliotheque' / 'templates',
+            BASE_DIR / 'comptes' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
-
                 'django.contrib.messages.context_processors.messages',
-                'comptes.context_processors.roles',
-
             ],
         },
     },
@@ -100,15 +98,14 @@ WSGI_APPLICATION = 'bibliotech.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
+# Pas de base de données Django car nous utilisons Supabase directement
+DATABASES = {}
 
+# Configuration des sessions en mémoire
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+CACHES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'aws-1-eu-west-3.pooler.supabase.com',
-        'NAME': 'postgres',
-        'USER': 'postgres.cfgxxawxmscsrtjsorkp',
-        'PASSWORD': 'azerty1234',
-        'PORT': 5432,
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
 
@@ -136,7 +133,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    BASE_DIR / 'bibliotheque' / 'static',
+]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 

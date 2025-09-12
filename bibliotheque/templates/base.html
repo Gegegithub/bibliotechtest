@@ -6,187 +6,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}BiblioTECH{% endblock %}</title>
 
-  <!-- Favicon -->
-  <link rel="icon" href="{% static 'img/mdb-favicon.ico' %}" type="image/x-icon" />
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" />
-
-  <!-- Google Fonts -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" crossorigin="anonymous" />
+  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-  <!-- Bootstrap & MDB -->
-  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/mdb.min.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-/* Hero */
-.hero {
-  position: relative;
-  background-image: url('/static/img/background.jpg');
-  background-size: cover;
-  background-position: center;
-  min-height: 40vh;          
-  padding: 100px 0;          
-  color: white;
-  text-align: center;
-  overflow: hidden;
-  filter: brightness(0.85);
-  z-index: 1; /* Ajout pour s'assurer que hero reste derrière le contenu */
-}
+    /* Correction pour éviter que le contenu soit caché par la navbar fixe */
+    main {
+      margin-top: 80px;
+    }
 
-.hero h1 {
-  color: #ffffff !important;  
-}
+    /* Hero section */
+    .hero {
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                  url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      min-height: 40vh;
+      padding: 100px 0;
+      color: white;
+      text-align: center;
+    }
 
-.hero p {
-  color: #e3e3e3ff !important;  
-}
+    .hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
 
-.hero > .container {
-  position: relative;
-  z-index: 3;
-}
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+  </style>
 
-.hero::before,
-.hero::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  opacity: 0;
-  animation-duration: 20s;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  pointer-events: none;
-  z-index: 2;
-  filter: brightness(0.8);
-  transform: scale(1.1);
-  transition: opacity 2s ease-in-out, transform 2s ease-in-out;
-}
-
-.hero::before {
-  background-image: url('/static/img/background1.jpg');
-  animation-name: fadeInOut1;
-  animation-delay: 0s;
-}
-
-.hero::after {
-  background-image: url('/static/img/background2.jpg');
-  animation-name: fadeInOut2;
-  animation-delay: 15s;
-}
-
-@keyframes fadeInOut1 {
-  0%, 5%    { opacity: 0; transform: scale(1.05); }
-  10%, 40%  { opacity: 1; transform: scale(1); }
-  45%, 100% { opacity: 0; transform: scale(1.05); }
-}
-
-@keyframes fadeInOut2 {
-  0%, 45%   { opacity: 0; transform: scale(1.05); }
-  50%, 80%  { opacity: 1; transform: scale(1); }
-  85%, 100% { opacity: 0; transform: scale(1.05); }
-}
-
-.btn-outline-lightgreen {
-  background-color: transparent;
-  color: #66cc99;
-  border: 2px solid #66cc99;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.btn-outline-lightgreen:hover,
-.btn-outline-lightgreen:focus {
-  background-color: #66cc99;
-  color: white;
-  text-decoration: none;
-}
-
-/* ✅ Correction pour éviter que le contenu soit caché par la navbar fixe */
-main {
-  margin-top: 80px; /* Ajuste selon la hauteur de ta navbar */
-}
-</style>
-
- {% block styles %}{% endblock %}
+  {% block styles %}{% endblock %}
 </head>
 
 <body>
-
   {% include '_nav.html' %}
 
- {% if request.resolver_match.url_name == 'accueil' %}
-<section class="hero">
-    <div class="container">
-      <h1>Plongez dans l’univers du savoir avec la bibliothèque numérique de la CCISCS</h1>
-      <p>La plateforme moderne de gestion et de consultation des ouvrages de la bibliothèque de la CCISCS.</p>
-      <a href="{% url 'presentation_bibliotheque' %}" class="btn btn-light btn-lg mt-4">
-        Découvrez la bibliothèque <i class="fas fa-book-open ms-2"></i>
-      </a>
-    </div>
-  </section>
+  {% if request.resolver_match.url_name == 'accueil' %}
+    <section class="hero">
+      <div class="container">
+        <h1>Plongez dans l'univers du savoir avec la bibliothèque numérique de la CCISCS</h1>
+        <p>La plateforme moderne de gestion et de consultation des ouvrages de la bibliothèque de la CCISCS.</p>
+        <a href="{% url 'inscription' %}" class="btn btn-light btn-lg">
+          Commencer maintenant <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+      </div>
+    </section>
   {% endif %}
 
   <main class="container mt-5 pt-4">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 
-  {% include '_footer.html' %}
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
-<script>
-  $(document).ready(function () {
-    $('#search').keyup(function () {
-      var query = $(this).val();
-      if (query.length > 1) {
-        $.ajax({
-          url: '{% url "autocomplete" %}',
-          data: { 'term': query },
-          dataType: 'json',
-          success: function (data) {
-            $('#suggestions').empty();
-            if (data.length > 0) {
-              $.each(data, function (i, item) {
-                $('#suggestions').append('<li class="list-group-item suggestion-item" style="cursor:pointer;">' + item + '</li>');
-              });
-            }
-          }
-        });
-      } else {
-        $('#suggestions').empty();
-      }
-    });
-
-    $(document).on('click', '.suggestion-item', function () {
-      $('#search').val($(this).text());
-      $('#suggestions').empty();
-      $('form').submit();
-    });
-
-    // ---- Correction : toujours revenir en haut après navigation ----
-    window.addEventListener('pageshow', function () {
-      window.scrollTo(0, 0);
-    });
-
-    // Pour les clics sur Accueil ou logo
-    document.querySelectorAll('a[href="/"]').forEach(function (link) {
-      link.addEventListener('click', function () {
-        window.scrollTo(0, 0);
-      });
-    });
-  });
-</script>
-
-
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

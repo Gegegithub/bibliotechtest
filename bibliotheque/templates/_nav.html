@@ -1,158 +1,10 @@
 {% load static %}
 
-<style>
-  /* Styles personnalisés pour le menu déroulant Mon Compte */
-  .dropdown-menu-center {
-    min-width: 200px;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    border: 1px solid rgba(0,0,0,0.1);
-    padding: 8px 0;
-  }
-  
-  .dropdown-menu-center .dropdown-item {
-    padding: 10px 20px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    margin: 2px 8px;
-  }
-  
-  .dropdown-menu-center .dropdown-item:hover {
-    background-color: #f8f9fa;
-    transform: translateX(5px);
-  }
-  
-  .dropdown-menu-center .dropdown-divider {
-    margin: 8px 16px;
-    border-color: #e9ecef;
-  }
-  
-  /* Animation d'apparition */
-  .dropdown-menu-center.show {
-    animation: dropdownFadeIn 0.2s ease-out;
-  }
-  
-  @keyframes dropdownFadeIn {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-  }
-
-  /* Système de notifications toast */
-  .toast-container {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    z-index: 9999;
-    max-width: 350px;
-  }
-
-  .toast-notification {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    border: none;
-    margin-bottom: 10px;
-    overflow: hidden;
-    animation: slideInRight 0.3s ease-out;
-  }
-
-  .toast-notification.success {
-    border-left: 4px solid #28a745;
-  }
-
-  .toast-notification.error {
-    border-left: 4px solid #dc3545;
-  }
-
-  .toast-notification.warning {
-    border-left: 4px solid #ffc107;
-  }
-
-  .toast-notification.info {
-    border-left: 4px solid #17a2b8;
-  }
-
-  .toast-header {
-    background: transparent;
-    border-bottom: 1px solid #e9ecef;
-    padding: 12px 16px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .toast-title {
-    font-weight: 600;
-    font-size: 14px;
-    color: #333;
-  }
-
-  .toast-close {
-    background: none;
-    border: none;
-    font-size: 18px;
-    color: #999;
-    cursor: pointer;
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-  }
-
-  .toast-close:hover {
-    background: #f8f9fa;
-    color: #666;
-  }
-
-  .toast-body {
-    padding: 8px 16px 12px;
-    color: #555;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideOutRight {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-  }
-
-  .toast-notification.hiding {
-    animation: slideOutRight 0.3s ease-in forwards;
-  }
-</style>
-
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'accueil' %}">
-      <img src="{% static 'img/Logo nav.webp' %}" alt="Logo CCISCS" height="40">
+      <i class="bi bi-book me-2"></i>
+      BiblioTECH
     </a>
 
     <!-- Bouton toggler mobile -->
@@ -169,88 +21,35 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'accueil' %}">Accueil</a>
         </li>
-
-        <!-- Menu déroulant bibliothèque -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="bibliothequeDropdown" role="button"
-             data-bs-toggle="dropdown" aria-expanded="false">
-            Accédez à la bibliothèque
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="bibliothequeDropdown">
-            {% if not request.utilisateur %}
-              <li><a class="dropdown-item" href="{% url 'inscription' %}">S'inscrire</a></li>
-              <li><a class="dropdown-item" href="{% url 'connexion' %}">Se connecter</a></li>
-            {% endif %}
-            <li><a class="dropdown-item" href="{% url 'rendez_vous' %}">Prendre rendez-vous</a></li>
-
-            {% if request.utilisateur.est_bibliothecaire %}
-              <li><a class="dropdown-item" href="{% url 'gestion_rdv_bibliothecaire' %}">Liste des rendez-vous</a></li>
-            {% endif %}
-
-            {% if request.utilisateur.est_personnel %}
-              <li><a class="dropdown-item" href="{% url 'gestion_rendezvous' %}">Gestion des rendez-vous (Admin)</a></li>
-            {% endif %}
-          </ul>
-        </li>
+        {% if request.utilisateur %}
+          {% if request.utilisateur.is_librarian %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'dashboard_bibliothecaire' %}">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+              </a>
+            </li>
+          {% elif request.utilisateur.is_admin %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'dashboard_admin' %}">
+                <i class="fas fa-crown me-1"></i>Dashboard Admin
+              </a>
+            </li>
+          {% endif %}
+        {% endif %}
       </ul>
-
-      <!-- Barre de recherche à droite -->
-      <form class="d-flex align-items-center position-relative" method="get" action="{% url 'recherche' %}">
-        <input class="form-control me-2" type="search" placeholder="Rechercher un livre, un auteur ou une catégorie"
-               aria-label="Search" id="search-input" name="q" autocomplete="off">
-
-        <div id="suggestions-list"
-          class="list-group position-absolute shadow-sm border"
-          style="top: 100%; z-index: 1000; width: 100%; background-color: white; display: none;">
-        </div>
-
-        <button class="btn btn-outline-secondary" type="submit" title="Rechercher">
-          <i class="bi bi-search"></i>
-        </button>
-      </form>
 
       <!-- Authentification / Mon Compte -->
       <ul class="navbar-nav ms-3">
         {% if request.utilisateur %}
-
-          <!-- Cloche notifications UNIFIÉE -->
-          <li class="nav-item me-2 position-relative">
-            <a class="nav-link" href="{% url 'notifications' %}?from_bell=1" title="Notifications" id="notifications-link">
-              <i class="bi bi-bell"></i>
-              {% if request.utilisateur.est_bibliothecaire and nb_notifications_biblio > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
-                  {{ nb_notifications_biblio }}
-                  <span class="visually-hidden">nouvelles notifications</span>
-                </span>
-              {% elif request.utilisateur.est_personnel and nb_notifications_personnel > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
-                  {{ nb_notifications_personnel }}
-                  <span class="visually-hidden">nouvelles notifications</span>
-                </span>
-              {% elif est_usager and nb_notifications_usager > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-badge">
-                  {{ nb_notifications_usager }}
-                  <span class="visually-hidden">nouvelles notifications</span>
-                </span>
-              {% endif %}
-            </a>
-          </li>
-
           <!-- Menu Mon Compte -->
-          <li class="nav-item dropdown {% if is_mon_compte_active %}active{% endif %}">
+          <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="monCompteDropdown" role="button"
                data-bs-toggle="dropdown" aria-expanded="false">
               Mon Compte
             </a>
-            <ul class="dropdown-menu dropdown-menu-center" aria-labelledby="monCompteDropdown" style="left: 50%; transform: translateX(-50%);">
+            <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="{% url 'mon_compte' %}">
                 <i class="bi bi-person-circle me-2"></i>Profil
-              </a></li>
-              <li><a class="dropdown-item" href="{% url 'mes_favoris' %}">
-                <i class="bi bi-heart me-2"></i>Mes favoris
-              </a></li>
-              <li><a class="dropdown-item" href="{% url 'mes_rendezvous' %}">
-                <i class="bi bi-calendar-event me-2"></i>Mes rendez-vous
               </a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item text-danger" href="{% url 'deconnexion' %}">
@@ -258,7 +57,6 @@
               </a></li>
             </ul>
           </li>
-
         {% else %}
           <li class="nav-item">
             <a class="nav-link" href="{% url 'connexion' %}?next={{ request.path }}">Connexion</a>
@@ -271,126 +69,3 @@
     </div>
   </div>
 </nav>
-
-<!-- Conteneur des notifications toast -->
-<div id="toast-container" class="toast-container"></div>
-
-<!-- Script pour suggestions dynamiques + notifications -->
-<script>
-  const searchInput = document.getElementById('search-input');
-  const suggestionsList = document.getElementById('suggestions-list');
-
-  searchInput.addEventListener('input', function () {
-    const query = this.value;
-    if (query.length > 1) {
-      fetch(`/recherche_suggestions/?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-          suggestionsList.innerHTML = '';
-          if (data.length > 0) {
-            data.forEach(item => {
-              const suggestionItem = document.createElement('button');
-              suggestionItem.type = 'button';
-              suggestionItem.classList.add('list-group-item', 'list-group-item-action');
-              suggestionItem.textContent = item;
-              suggestionItem.addEventListener('click', function () {
-                window.location.href = `{% url 'recherche' %}?q=${encodeURIComponent(item)}`;
-              });
-              suggestionsList.appendChild(suggestionItem);
-            });
-            suggestionsList.style.display = 'block';
-          } else {
-            suggestionsList.style.display = 'none';
-          }
-        });
-    } else {
-      suggestionsList.innerHTML = '';
-      suggestionsList.style.display = 'none';
-    }
-  });
-
-  document.addEventListener('click', function (event) {
-    if (!suggestionsList.contains(event.target) && event.target !== searchInput) {
-      suggestionsList.innerHTML = '';
-      suggestionsList.style.display = 'none';
-    }
-  });
-
-  // Système de notifications toast
-  function showToast(message, type = 'info', duration = 5000) {
-    const toastContainer = document.getElementById('toast-container');
-    
-    // Créer la notification
-    const toast = document.createElement('div');
-    toast.className = `toast-notification ${type}`;
-    
-    // Déterminer le titre selon le type
-    let title = 'Information';
-    let icon = 'ℹ️';
-    switch(type) {
-      case 'success':
-        title = 'Succès';
-        icon = '✅';
-        break;
-      case 'error':
-        title = 'Erreur';
-        icon = '❌';
-        break;
-      case 'warning':
-        title = 'Attention';
-        icon = '⚠️';
-        break;
-    }
-    
-    toast.innerHTML = `
-      <div class="toast-header">
-        <span class="toast-title">${icon} ${title}</span>
-        <button type="button" class="toast-close" onclick="this.closest('.toast-notification').remove()">×</button>
-      </div>
-      <div class="toast-body">${message}</div>
-    `;
-    
-    // Ajouter au conteneur
-    toastContainer.appendChild(toast);
-    
-    // Auto-suppression après la durée spécifiée
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.classList.add('hiding');
-        setTimeout(() => {
-          if (toast.parentNode) {
-            toast.remove();
-          }
-        }, 300);
-      }
-    }, duration);
-  }
-
-  // Fonction globale pour afficher des notifications depuis d'autres scripts
-  window.showNotification = showToast;
-
-  // ✅ Masquer badge et mettre à jour compteur au clic
-  document.addEventListener('DOMContentLoaded', function() {
-    const notificationsLink = document.getElementById('notifications-link');
-    const badge = document.getElementById('notifications-badge');
-
-    if (notificationsLink && badge) {
-      notificationsLink.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        // Faire disparaître le badge visuellement
-        badge.style.transition = 'opacity 0.3s ease';
-        badge.style.opacity = '0';
-
-        setTimeout(() => {
-          if (badge.parentNode) {
-            badge.remove();
-          }
-        }, 300);
-
-        // Redirection après le clic
-        window.location.href = this.getAttribute('href');
-      });
-    }
-  });
-</script>

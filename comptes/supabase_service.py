@@ -11,7 +11,12 @@ class SupabaseService:
     def sign_up(self, email: str, password: str, user_data: Dict) -> Dict:
         """Inscription d'un utilisateur"""
         try:
-            # Créer l'utilisateur dans auth.users
+            # Vérifier si l'utilisateur existe déjà
+            existing_user = self.client.table('profiles').select('id').eq('email', email).execute()
+            if existing_user.data:
+                return {"success": False, "error": "Un utilisateur avec cet email existe déjà"}
+            
+            # Créer l'utilisateur dans auth.users avec les données dans raw_user_meta_data
             auth_response = self.client.auth.sign_up({
                 "email": email,
                 "password": password,
@@ -21,35 +26,28 @@ class SupabaseService:
             })
             
             if auth_response.user:
-                # Créer le profil dans public.profiles
-                profile_data = {
-                    "id": auth_response.user.id,
-                    "email": email,
-                    "nom": user_data.get("nom", ""),
-                    "prenom": user_data.get("prenom", ""),
-                    "adresse": user_data.get("adresse", ""),
-                    "telephone": user_data.get("telephone", ""),
-                    "secteur_activite": user_data.get("secteur_activite", ""),
-                    "institution": user_data.get("institution", ""),
-                    "profil": user_data.get("profil", "etudiant"),
-                    "is_admin": user_data.get("is_admin", False),
-                    "is_administration": user_data.get("is_administration", False),
-                    "is_librarian": user_data.get("is_librarian", False),
-                    "is_user": user_data.get("is_user", True)
-                }
+                # Le profil est créé automatiquement par la fonction handle_new_user()
+                # Récupérer le profil créé
+                profile_response = self.client.table('profiles').select('*').eq('id', auth_response.user.id).execute()
                 
-                profile_response = self.client.table('profiles').insert(profile_data).execute()
-                
-                return {
-                    "success": True,
-                    "user": auth_response.user,
-                    "profile": profile_response.data[0] if profile_response.data else None
-                }
+                if profile_response.data:
+                    return {
+                        "success": True,
+                        "user": auth_response.user,
+                        "profile": profile_response.data[0]
+                    }
+                else:
+                    return {"success": False, "error": "Profil non trouvé après création"}
             else:
                 return {"success": False, "error": "Erreur lors de la création de l'utilisateur"}
                 
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            import traceback
+            error_msg = str(e)
+            traceback_str = traceback.format_exc()
+            print(f"Erreur détaillée: {error_msg}")
+            print(f"Traceback: {traceback_str}")
+            return {"success": False, "error": f"Erreur d'inscription: {error_msg}"}
     
     def sign_in(self, email: str, password: str) -> Dict:
         """Connexion d'un utilisateur"""
