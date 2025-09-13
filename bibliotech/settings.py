@@ -41,9 +41,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.staticfiles',
-    'django.contrib.messages',
+    'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     'widget_tweaks',
     'bibliotheque',
     'comptes',
@@ -104,8 +105,14 @@ WSGI_APPLICATION = 'bibliotech.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Pas de base de données Django car nous utilisons Supabase directement
-DATABASES = {}
+# Configuration minimale de base de données pour Django
+# Nous utilisons Supabase comme base de données principale
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # Configuration des sessions en mémoire
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

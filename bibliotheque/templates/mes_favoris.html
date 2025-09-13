@@ -19,16 +19,16 @@
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ livre.titre }}</h5>
                             <p class="card-text">
-                                {% if livre.auteurs %}
-                                    {{ livre.auteurs.nom }}{% if livre.auteurs.prenom %} {{ livre.auteurs.prenom }}{% endif %}
+                                {% if livre.auteur %}
+                                    {{ livre.auteur.nom }}{% if livre.auteur.prenom %} {{ livre.auteur.prenom }}{% endif %}
                                 {% else %}
                                     Auteur inconnu
                                 {% endif %}
                             </p>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    {% if livre.categories %}
-                                        {{ livre.categories.nom }}
+                                    {% if livre.categorie %}
+                                        {{ livre.categorie.nom }}
                                     {% endif %}
                                 </small>
                             </p>

@@ -166,13 +166,36 @@ class SupabaseService:
             if not self.client:
                 print("Client Supabase non initialisé")
                 return []
-            # Récupérer les livres avec les informations des auteurs et catégories
-            result = self.client.table('livres').select('''
-                *,
-                auteurs: auteur_id(nom, prenom),
-                categories: categorie_id(nom, description)
-            ''').execute()
-            return result.data
+            
+            # Récupérer tous les livres
+            result = self.client.table('livres').select('*').execute()
+            livres = result.data
+            
+            # Pour chaque livre, récupérer l'auteur et la catégorie
+            for livre in livres:
+                if livre.get('auteur_id'):
+                    try:
+                        auteur_result = self.client.table('auteurs').select('nom, prenom').eq('id', livre['auteur_id']).execute()
+                        if auteur_result.data:
+                            livre['auteur'] = auteur_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de l'auteur {livre['auteur_id']}: {e}")
+                        livre['auteur'] = None
+                else:
+                    livre['auteur'] = None
+                
+                if livre.get('categorie_id'):
+                    try:
+                        categorie_result = self.client.table('categories').select('nom, image').eq('id', livre['categorie_id']).execute()
+                        if categorie_result.data:
+                            livre['categorie'] = categorie_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de la catégorie {livre['categorie_id']}: {e}")
+                        livre['categorie'] = None
+                else:
+                    livre['categorie'] = None
+            
+            return livres
         except Exception as e:
             print(f"Erreur lors de la récupération des livres: {e}")
             return []
@@ -184,14 +207,35 @@ class SupabaseService:
                 print("Client Supabase non initialisé")
                 return []
             
-            # Recherche simple dans le titre d'abord
-            result = self.client.table('livres').select('''
-                *,
-                auteurs: auteur_id(nom, prenom),
-                categories: categorie_id(nom, image)
-            ''').ilike('titre', f'%{query}%').execute()
+            # Recherche simple dans le titre
+            result = self.client.table('livres').select('*').ilike('titre', f'%{query}%').execute()
+            livres = result.data
             
-            return result.data
+            # Pour chaque livre trouvé, récupérer l'auteur et la catégorie
+            for livre in livres:
+                if livre.get('auteur_id'):
+                    try:
+                        auteur_result = self.client.table('auteurs').select('nom, prenom').eq('id', livre['auteur_id']).execute()
+                        if auteur_result.data:
+                            livre['auteur'] = auteur_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de l'auteur {livre['auteur_id']}: {e}")
+                        livre['auteur'] = None
+                else:
+                    livre['auteur'] = None
+                
+                if livre.get('categorie_id'):
+                    try:
+                        categorie_result = self.client.table('categories').select('nom, image').eq('id', livre['categorie_id']).execute()
+                        if categorie_result.data:
+                            livre['categorie'] = categorie_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de la catégorie {livre['categorie_id']}: {e}")
+                        livre['categorie'] = None
+                else:
+                    livre['categorie'] = None
+            
+            return livres
         except Exception as e:
             print(f"Erreur lors de la recherche de livres: {e}")
             return []
@@ -380,12 +424,36 @@ class SupabaseService:
             if not self.client:
                 print("Client Supabase non initialisé")
                 return []
-            result = self.client.table('livres').select('''
-                *,
-                auteurs: auteur_id(nom, prenom),
-                categories: categorie_id(nom, description)
-            ''').eq('categorie_id', categorie_id).execute()
-            return result.data
+            
+            # D'abord, récupérer les livres sans jointure pour debug
+            result = self.client.table('livres').select('*').eq('categorie_id', categorie_id).execute()
+            livres = result.data
+            
+            # Ensuite, pour chaque livre, récupérer l'auteur et la catégorie séparément
+            for livre in livres:
+                if livre.get('auteur_id'):
+                    try:
+                        auteur_result = self.client.table('auteurs').select('nom, prenom').eq('id', livre['auteur_id']).execute()
+                        if auteur_result.data:
+                            livre['auteur'] = auteur_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de l'auteur {livre['auteur_id']}: {e}")
+                        livre['auteur'] = None
+                else:
+                    livre['auteur'] = None
+                
+                if livre.get('categorie_id'):
+                    try:
+                        categorie_result = self.client.table('categories').select('nom, image').eq('id', livre['categorie_id']).execute()
+                        if categorie_result.data:
+                            livre['categorie'] = categorie_result.data[0]
+                    except Exception as e:
+                        print(f"Erreur lors de la récupération de la catégorie {livre['categorie_id']}: {e}")
+                        livre['categorie'] = None
+                else:
+                    livre['categorie'] = None
+            
+            return livres
         except Exception as e:
             print(f"Erreur lors de la récupération des livres par catégorie: {e}")
             return []
@@ -396,12 +464,39 @@ class SupabaseService:
             if not self.client:
                 print("Client Supabase non initialisé")
                 return None
-            result = self.client.table('livres').select('''
-                *,
-                auteurs: auteur_id(nom, prenom),
-                categories: categorie_id(nom, description)
-            ''').eq('id', livre_id).execute()
-            return result.data[0] if result.data else None
+            
+            # Récupérer le livre
+            result = self.client.table('livres').select('*').eq('id', livre_id).execute()
+            if not result.data:
+                return None
+            
+            livre = result.data[0]
+            
+            # Récupérer l'auteur
+            if livre.get('auteur_id'):
+                try:
+                    auteur_result = self.client.table('auteurs').select('nom, prenom').eq('id', livre['auteur_id']).execute()
+                    if auteur_result.data:
+                        livre['auteur'] = auteur_result.data[0]
+                except Exception as e:
+                    print(f"Erreur lors de la récupération de l'auteur {livre['auteur_id']}: {e}")
+                    livre['auteur'] = None
+            else:
+                livre['auteur'] = None
+            
+            # Récupérer la catégorie
+            if livre.get('categorie_id'):
+                try:
+                    categorie_result = self.client.table('categories').select('nom, image').eq('id', livre['categorie_id']).execute()
+                    if categorie_result.data:
+                        livre['categorie'] = categorie_result.data[0]
+                except Exception as e:
+                    print(f"Erreur lors de la récupération de la catégorie {livre['categorie_id']}: {e}")
+                    livre['categorie'] = None
+            else:
+                livre['categorie'] = None
+            
+            return livre
         except Exception as e:
             print(f"Erreur lors de la récupération du livre: {e}")
             return None

@@ -7,16 +7,16 @@
   <div class="card shadow-sm mx-auto" style="max-width: 900px;">
 
     <div class="card-header bg-white border-bottom d-flex align-items-center">
-      {% if request.utilisateur.photo %}
-        <img src="{{ request.utilisateur.photo.url }}" 
+      {% if request.session.utilisateur_profile.photo %}
+        <img src="{{ request.session.utilisateur_profile.photo }}" 
              alt="Photo de profil" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
       {% else %}
         <img src="{% static 'img/default-avatar.png' %}" 
              alt="Photo de profil par défaut" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
       {% endif %}
       <div class="ms-3">
-        <h2 class="mb-0">{{ request.utilisateur.prenom }} {{ request.utilisateur.nom }}</h2>
-        <small class="text-muted">{{ request.utilisateur.email }}</small>
+        <h2 class="mb-0">{{ request.session.utilisateur_profile.prenom|default:"Utilisateur" }} {{ request.session.utilisateur_profile.nom|default:"" }}</h2>
+        <small class="text-muted">{{ request.session.utilisateur_profile.email|default:"Email non disponible" }}</small>
       </div>
     </div>
 
@@ -27,21 +27,21 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Prénom :</strong> {{ request.utilisateur.prenom }}
+            <strong>Prénom :</strong> {{ request.session.utilisateur_profile.prenom|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Nom :</strong> {{ request.utilisateur.nom }}
+            <strong>Nom :</strong> {{ request.session.utilisateur_profile.nom|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Adresse email :</strong> {{ request.utilisateur.email }}
+            <strong>Adresse email :</strong> {{ request.session.utilisateur_profile.email|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Numéro de téléphone :</strong> {{ request.utilisateur.telephone|default:"Non renseigné" }}
+            <strong>Numéro de téléphone :</strong> {{ request.session.utilisateur_profile.telephone|default:"Non renseigné" }}
           </div>
           <div class="col-md-12 mb-2">
             <strong>Adresse postale :</strong> 
-            {% if request.utilisateur.adresse %}
-              {{ request.utilisateur.adresse }}
+            {% if request.session.utilisateur_profile.adresse %}
+              {{ request.session.utilisateur_profile.adresse }}
             {% else %}
               Non renseignée
             {% endif %}
@@ -55,16 +55,16 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Type d'utilisateur :</strong> {{ request.utilisateur.get_type_utilisateur_display|default:"Non renseigné" }}
+            <strong>Type d'utilisateur :</strong> {{ request.session.utilisateur_profile.type_utilisateur|default:"Lecteur" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Profession :</strong> {{ request.utilisateur.profession|default:"Non renseigné" }}
+            <strong>Profession :</strong> {{ request.session.utilisateur_profile.profession|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Institution / entreprise :</strong> {{ request.utilisateur.institution|default:"Non renseigné" }}
+            <strong>Institution / entreprise :</strong> {{ request.session.utilisateur_profile.institution|default:"Non renseigné" }}
           </div>
           <div class="col-md-6 mb-2">
-            <strong>Secteur d'activité :</strong> {{ request.utilisateur.secteur_activite|default:"Non renseigné" }}
+            <strong>Secteur d'activité :</strong> {{ request.session.utilisateur_profile.secteur_activite|default:"Non renseigné" }}
           </div>
         </div>
       </section>
@@ -75,19 +75,19 @@
         <hr>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <strong>Date d'inscription :</strong> {{ request.utilisateur.date_inscription|date:"d/m/Y" }}
+            <strong>Date d'inscription :</strong> {{ request.session.utilisateur_profile.created_at|date:"d/m/Y"|default:"Non disponible" }}
           </div>
           <div class="col-md-6 mb-2">
             <strong>Dernière connexion :</strong> 
-            {% if request.utilisateur.derniere_connexion %}
-              {{ request.utilisateur.derniere_connexion|date:"d/m/Y H:i" }}
+            {% if request.session.utilisateur_profile.last_sign_in_at %}
+              {{ request.session.utilisateur_profile.last_sign_in_at|date:"d/m/Y H:i" }}
             {% else %}
               Première connexion
             {% endif %}
           </div>
           <div class="col-md-6 mb-2">
             <strong>Statut du compte :</strong> 
-            {% if request.utilisateur.est_actif %}
+            {% if request.session.utilisateur_profile.est_actif %}
               <span class="badge bg-success">Actif</span>
             {% else %}
               <span class="badge bg-danger">Inactif</span>
@@ -95,11 +95,11 @@
           </div>
           <div class="col-md-6 mb-2">
             <strong>Rôle principal :</strong>
-            {% if request.utilisateur.est_admin %}
+            {% if request.session.utilisateur_profile.type_utilisateur == "Admin" %}
               <span class="badge bg-danger">Administrateur</span>
-            {% elif request.utilisateur.est_bibliothecaire %}
+            {% elif request.session.utilisateur_profile.type_utilisateur == "Bibliothecaire" %}
               <span class="badge bg-primary">Bibliothécaire</span>
-            {% elif request.utilisateur.est_personnel %}
+            {% elif request.session.utilisateur_profile.type_utilisateur == "Personnel" %}
               <span class="badge bg-warning text-dark">Personnel administratif</span>
             {% else %}
               <span class="badge bg-info">Lecteur</span>
@@ -116,19 +116,19 @@
           <div class="col-md-12 mt-3">
             <div class="alert alert-light border">
               <h6 class="mb-2"><i class="bi bi-shield-check me-2"></i>Vos permissions actuelles :</h6>
-              {% if request.utilisateur.est_admin %}
+              {% if request.session.utilisateur_profile.type_utilisateur == "Admin" %}
                 <ul class="mb-0 small">
                   <li>Gestion complète de tous les utilisateurs</li>
                   <li>Promotion et rétrogradation des rôles</li>
                   <li>Accès à toutes les fonctionnalités de la bibliothèque</li>
                 </ul>
-              {% elif request.utilisateur.est_bibliothecaire %}
+              {% elif request.session.utilisateur_profile.type_utilisateur == "Bibliothecaire" %}
                 <ul class="mb-0 small">
                   <li>Gestion des livres et catégories</li>
                   <li>Gestion des rendez-vous</li>
                   <li>Accès aux notifications bibliothécaire</li>
                 </ul>
-              {% elif request.utilisateur.est_personnel %}
+              {% elif request.session.utilisateur_profile.type_utilisateur == "Personnel" %}
                 <ul class="mb-0 small">
                   <li>Gestion administrative des rendez-vous</li>
                   <li>Accès aux notifications personnel</li>
@@ -160,7 +160,7 @@
           </a>
           
           <!-- Lien d'administration pour le super admin -->
-          {% if request.utilisateur|is_super_admin %}
+          {% if request.session.utilisateur_profile.type_utilisateur == "Admin" %}
             <a href="#" class="btn btn-outline-warning" onclick="alert('Fonctionnalité en cours de développement')">
               <i class="bi bi-people-fill me-1"></i>Administration des Utilisateurs
             </a>
@@ -174,8 +174,8 @@
 
       <!-- Autres éléments utiles -->
       <section class="mb-3 text-center">
-        <a href="{% url 'support_contact' %}" class="btn btn-link">Support / Contact aide</a> |
-        <a href="{% url 'conditions_generales' %}" class="btn btn-link">Conditions générales</a>
+        <a href="#" class="btn btn-link" onclick="alert('Fonctionnalité en cours de développement')">Support / Contact aide</a> |
+        <a href="#" class="btn btn-link" onclick="alert('Fonctionnalité en cours de développement')">Conditions générales</a>
       </section>
     </div>
   </div>

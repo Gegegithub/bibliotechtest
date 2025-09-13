@@ -209,7 +209,7 @@
               {{ livre.titre }}
             </a>
           </h5>
-          <p class="card-text mb-1">Auteur : {% if livre.auteurs %}{{ livre.auteurs.nom }} {{ livre.auteurs.prenom }}{% else %}Non spécifié{% endif %}</p>
+          <p class="card-text mb-1">Auteur : {% if livre.auteur %}{{ livre.auteur.nom }}{% if livre.auteur.prenom %} {{ livre.auteur.prenom }}{% endif %}{% else %}Non spécifié{% endif %}</p>
           <p class="card-text mb-3">Date de publication : {{ livre.date_publication }}</p>
 
           <div class="mt-auto d-flex justify-content-between align-items-center action-buttons">

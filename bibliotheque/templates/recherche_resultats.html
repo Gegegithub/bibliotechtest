@@ -25,16 +25,16 @@
             <div class="card-body d-flex flex-column">
               <h5 class="card-title">{{ livre.titre }}</h5>
               <p class="card-text">
-                {% if livre.auteurs %}
-                  <strong>Auteur :</strong> {{ livre.auteurs.nom }}{% if livre.auteurs.prenom %} {{ livre.auteurs.prenom }}{% endif %}
+                {% if livre.auteur %}
+                  <strong>Auteur :</strong> {{ livre.auteur.nom }}{% if livre.auteur.prenom %} {{ livre.auteur.prenom }}{% endif %}
                 {% else %}
                   <em>Auteur inconnu</em>
                 {% endif %}
               </p>
               <p class="card-text">
                 <small class="text-muted">
-                  {% if livre.categories %}
-                    <strong>Catégorie :</strong> {{ livre.categories.nom }}
+                  {% if livre.categorie %}
+                    <strong>Catégorie :</strong> {{ livre.categorie.nom }}
                   {% endif %}
                 </small>
               </p>
