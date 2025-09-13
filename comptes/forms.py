@@ -33,3 +33,104 @@ class InscriptionForm(forms.Form):
 class ConnexionForm(forms.Form):
     email = forms.EmailField(label='Email')
     mot_de_passe = forms.CharField(label='Mot de passe', widget=forms.PasswordInput)
+
+class RendezVousForm(forms.Form):
+    # Champs d'informations personnelles (en lecture seule)
+    nom = forms.CharField(
+        label='Nom',
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'readonly': True,
+            'style': 'background-color: #f8f9fa;'
+        })
+    )
+    
+    prenom = forms.CharField(
+        label='Prénom',
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'readonly': True,
+            'style': 'background-color: #f8f9fa;'
+        })
+    )
+    
+    email = forms.EmailField(
+        label='Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'readonly': True,
+            'style': 'background-color: #f8f9fa;'
+        })
+    )
+    
+    telephone = forms.CharField(
+        label='Téléphone',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'readonly': True,
+            'style': 'background-color: #f8f9fa;',
+            'placeholder': 'Entrez votre numéro'
+        })
+    )
+    
+    # Champs correspondant au code TypeScript
+    profil = forms.ChoiceField(
+        label='Profil',
+        choices=[
+            ('etudiant_chercheur', 'Étudiant/Chercheur'),
+            ('professionnel', 'Professionnel'),
+            ('entrepreneur', 'Entrepreneur'),
+            ('membre_entreprise', 'Membre d\'entreprise')
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    raison = forms.ChoiceField(
+        label='Raison',
+        choices=[
+            ('formation', 'Formation'),
+            ('recherche', 'Recherche'),
+            ('preparation_diplome', 'Préparation diplôme')
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    appointment_date = forms.DateTimeField(
+        label='Date du rendez-vous',
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-control',
+            'type': 'datetime-local'
+        })
+    )
+    
+    titre_ouvrage = forms.CharField(
+        label='Titre de l\'ouvrage',
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Rechercher un livre...'
+        })
+    )
+    
+    numero_inventaire = forms.CharField(
+        label='Numéro d\'inventaire',
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Numéro d\'inventaire'
+        })
+    )
+    
+    ancien_code = forms.CharField(
+        label='Ancien code',
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ancien code (optionnel)'
+        })
+    )

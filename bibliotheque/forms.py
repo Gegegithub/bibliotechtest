@@ -7,10 +7,10 @@ class CategorieForm(forms.Form):
         max_length=100,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
-    image = forms.ImageField(
-        label="Image de la catégorie",
+    image = forms.URLField(
+        label="URL de l'image de la catégorie",
         required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://exemple.com/image.jpg'})
     )
 
 class LivreForm(forms.Form):

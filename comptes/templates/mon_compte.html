@@ -152,16 +152,16 @@
         <h5><i class="bi bi-gear-fill me-2"></i>Options de gestion du compte</h5>
         <hr>
         <div class="d-flex flex-wrap gap-3">
-          <a href="{% url 'modifier_informations' %}" class="btn btn-outline-primary">
+          <a href="#" class="btn btn-outline-primary" onclick="alert('Fonctionnalité en cours de développement')">
             <i class="bi bi-pencil-fill me-1"></i>Modifier mes informations
           </a>
-          <a href="{% url 'changer_mot_de_passe' %}" class="btn btn-outline-secondary">
+          <a href="#" class="btn btn-outline-secondary" onclick="alert('Fonctionnalité en cours de développement')">
             <i class="bi bi-lock-fill me-1"></i>Changer le mot de passe
           </a>
           
           <!-- Lien d'administration pour le super admin -->
           {% if request.utilisateur|is_super_admin %}
-            <a href="{% url 'administration_utilisateurs' %}" class="btn btn-outline-warning">
+            <a href="#" class="btn btn-outline-warning" onclick="alert('Fonctionnalité en cours de développement')">
               <i class="bi bi-people-fill me-1"></i>Administration des Utilisateurs
             </a>
           {% endif %}

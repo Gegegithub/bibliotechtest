@@ -3,8 +3,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'accueil' %}">
-      <i class="bi bi-book me-2"></i>
-      BiblioTECH
+      <img src="{% static 'img/Logo nav.webp' %}" alt="BiblioTECH" height="40" onerror="this.style.display='none'">
     </a>
 
     <!-- Bouton toggler mobile -->
@@ -21,6 +20,32 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'accueil' %}">Accueil</a>
         </li>
+        
+        <!-- Menu déroulant "Accéder à la bibliothèque" -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="bibliothequeDropdown" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-book me-1"></i>Accéder à la bibliothèque
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'inscription' %}">
+              <i class="bi bi-person-plus me-2"></i>S'inscrire
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'rendez_vous' %}">
+              <i class="bi bi-calendar-check me-2"></i>Prendre RDV
+            </a></li>
+            {% if request.utilisateur and request.utilisateur.est_bibliothecaire %}
+            <li><a class="dropdown-item" href="{% url 'gestion_rdv_bibliothecaire' %}">
+              <i class="bi bi-list-ul me-2"></i>Liste des rendez-vous
+            </a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'connexion' %}">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+            </a></li>
+          </ul>
+        </li>
+        
         {% if request.utilisateur %}
           {% if request.utilisateur.is_librarian %}
             <li class="nav-item">
@@ -38,6 +63,21 @@
         {% endif %}
       </ul>
 
+      <!-- Barre de recherche -->
+      <form class="d-flex mx-3" method="get" action="{% url 'recherche' %}" id="searchForm">
+        <div class="input-group position-relative">
+          <input class="form-control" type="search" name="q" id="searchInput" placeholder="Rechercher un livre..." 
+                 aria-label="Rechercher" value="{{ request.GET.q|default:'' }}" autocomplete="off">
+          <button class="btn btn-outline-secondary" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+          <!-- Dropdown pour les suggestions -->
+          <div id="suggestionsDropdown" class="dropdown-menu w-100" style="display: none; position: absolute; top: 100%; z-index: 1000;">
+            <!-- Les suggestions seront ajoutées ici dynamiquement -->
+          </div>
+        </div>
+      </form>
+
       <!-- Authentification / Mon Compte -->
       <ul class="navbar-nav ms-3">
         {% if request.utilisateur %}
@@ -50,6 +90,9 @@
             <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="{% url 'mon_compte' %}">
                 <i class="bi bi-person-circle me-2"></i>Profil
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'mes_favoris' %}">
+                <i class="bi bi-heart me-2"></i>Mes Favoris
               </a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item text-danger" href="{% url 'deconnexion' %}">
@@ -69,3 +112,122 @@
     </div>
   </div>
 </nav>
+
+<!-- JavaScript pour l'autocomplétion -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+    let timeoutId;
+    
+    // Fonction pour récupérer les suggestions
+    function fetchSuggestions(query) {
+        if (query.length < 2) {
+            suggestionsDropdown.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/bibliotheque/recherche-suggestions/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(suggestions => {
+                displaySuggestions(suggestions);
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération des suggestions:', error);
+                suggestionsDropdown.style.display = 'none';
+            });
+    }
+    
+    // Fonction pour afficher les suggestions
+    function displaySuggestions(suggestions) {
+        if (suggestions.length === 0) {
+            suggestionsDropdown.style.display = 'none';
+            return;
+        }
+        
+        suggestionsDropdown.innerHTML = '';
+        suggestions.forEach(suggestion => {
+            const item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = suggestion;
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                searchInput.value = suggestion;
+                suggestionsDropdown.style.display = 'none';
+                document.getElementById('searchForm').submit();
+            });
+            suggestionsDropdown.appendChild(item);
+        });
+        
+        suggestionsDropdown.style.display = 'block';
+    }
+    
+    // Événement de saisie avec debounce
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            fetchSuggestions(this.value);
+        }, 300); // Attendre 300ms après la dernière frappe
+    });
+    
+    // Masquer les suggestions quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#searchInput') && !e.target.closest('#suggestionsDropdown')) {
+            suggestionsDropdown.style.display = 'none';
+        }
+    });
+    
+    // Navigation au clavier
+    searchInput.addEventListener('keydown', function(e) {
+        const items = suggestionsDropdown.querySelectorAll('.dropdown-item');
+        const activeItem = suggestionsDropdown.querySelector('.dropdown-item.active');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeItem) {
+                activeItem.classList.remove('active');
+                const nextItem = activeItem.nextElementSibling;
+                if (nextItem) {
+                    nextItem.classList.add('active');
+                }
+            } else if (items.length > 0) {
+                items[0].classList.add('active');
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeItem) {
+                activeItem.classList.remove('active');
+                const prevItem = activeItem.previousElementSibling;
+                if (prevItem) {
+                    prevItem.classList.add('active');
+                }
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeItem) {
+                activeItem.click();
+            } else {
+                this.form.submit();
+            }
+        } else if (e.key === 'Escape') {
+            suggestionsDropdown.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<style>
+.dropdown-item.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.active:hover {
+    background-color: #0b5ed7;
+}
+</style>

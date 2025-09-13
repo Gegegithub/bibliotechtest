@@ -4,30 +4,63 @@
     <!-- Titre centré et vert pur -->
     <h2 class="mb-4 text-center" style="color: #008000;">Mes favoris</h2>
 
-    {% if favoris %}
+    {% if livres_favoris %}
         <div class="row">
-            {% for livre in favoris %}
+            {% for livre in livres_favoris %}
                 <div class="col-md-3 mb-4">
                     <div class="card h-100 shadow-sm">
                         {% if livre.image %}
-                            <img src="{{ livre.image.url }}" class="card-img-top" alt="{{ livre.titre }}" style="height: 200px; object-fit: cover;">
+                            <img src="{{ livre.image }}" class="card-img-top" alt="{{ livre.titre }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                                <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                            </div>
                         {% endif %}
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ livre.titre }}</h5>
-                            <p class="card-text">{{ livre.auteur }}</p>
+                            <p class="card-text">
+                                {% if livre.auteurs %}
+                                    {{ livre.auteurs.nom }}{% if livre.auteurs.prenom %} {{ livre.auteurs.prenom }}{% endif %}
+                                {% else %}
+                                    Auteur inconnu
+                                {% endif %}
+                            </p>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    {% if livre.categories %}
+                                        {{ livre.categories.nom }}
+                                    {% endif %}
+                                </small>
+                            </p>
                             
-                            <!-- Bouton "Voir" -->
-                            <a href="{% url 'detail_livre' livre.categorie.id livre.id %}?depuis=favoris" class="btn btn-primary btn-sm">Voir</a>
-
-
-                            <!-- Bouton "Supprimer des favoris" supprimé -->
+                            <div class="mt-auto">
+                                <!-- Bouton "Voir" -->
+                                <a href="{% url 'detail_livre' livre.categorie_id livre.id %}?depuis=favoris" class="btn btn-primary btn-sm me-2">
+                                    <i class="bi bi-eye me-1"></i>Voir
+                                </a>
+                                
+                                <!-- Bouton "Supprimer des favoris" -->
+                                <form method="post" action="{% url 'supprimer_favori' livre.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer des favoris">
+                                        <i class="bi bi-heart-fill me-1"></i>Retirer
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <p>Vous n'avez aucun livre en favori.</p>
+        <div class="text-center py-5">
+            <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">Aucun livre en favori</h4>
+            <p class="text-muted">Découvrez notre collection et ajoutez vos livres préférés à vos favoris !</p>
+            <a href="{% url 'catalogue' %}" class="btn btn-primary">
+                <i class="bi bi-book me-2"></i>Parcourir le catalogue
+            </a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

@@ -148,12 +148,27 @@
             </div>
 
             <div>
-              {% if request.utilisateur and not request.utilisateur.est_bibliothecaire and not request.utilisateur.est_admin %}
-                <a href="{% url 'rendez_vous' %}" 
-                   class="btn"
-                   style="background-color: transparent; color: black; border: 1px solid black; border-radius: 5px;">
-                  <i class="bi bi-calendar-event me-2"></i>Prenez rendez-vous ici pour consulter cet ouvrage.
+              {% if request.utilisateur %}
+                <a href="{% url 'rendez_vous' %}?livre_titre={{ livre.titre|urlencode }}&livre_inventaire={{ livre.numero_inventaire|urlencode }}&livre_ancien_code={{ livre.ancien_code|urlencode }}" 
+                   class="btn btn-primary">
+                  <i class="bi bi-calendar-check me-2"></i>Prendre RDV
                 </a>
+              {% else %}
+                <a href="{% url 'connexion' %}?next={{ request.path }}" class="btn btn-outline-primary">
+                  <i class="bi bi-calendar-check me-2"></i>Prendre RDV
+                </a>
+              {% endif %}
+              
+              <!-- Boutons d'administration pour les bibliothécaires -->
+              {% if request.utilisateur and request.utilisateur.est_bibliothecaire %}
+                <div class="mt-3">
+                  <a href="{% url 'modifier_livre' livre.id %}" class="btn btn-warning btn-sm me-2">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                  </a>
+                  <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                    <i class="bi bi-trash me-1"></i>Supprimer
+                  </button>
+                </div>
               {% endif %}
             </div>
           </div>
@@ -239,6 +254,33 @@ document.getElementById('favori-form')?.addEventListener('submit', function(even
   });
 });
 </script>
+
+<!-- Modal de confirmation de suppression -->
+{% if request.utilisateur and request.utilisateur.est_bibliothecaire %}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la suppression</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer le livre <strong>"{{ livre.titre }}"</strong> ?</p>
+        <p class="text-danger"><small>Cette action est irréversible.</small></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form method="post" action="{% url 'supprimer_livre' livre.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Supprimer définitivement
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}
 

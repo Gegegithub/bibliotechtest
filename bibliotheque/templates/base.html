@@ -52,8 +52,8 @@
       <div class="container">
         <h1>Plongez dans l'univers du savoir avec la bibliothèque numérique de la CCISCS</h1>
         <p>La plateforme moderne de gestion et de consultation des ouvrages de la bibliothèque de la CCISCS.</p>
-        <a href="{% url 'inscription' %}" class="btn btn-light btn-lg">
-          Commencer maintenant <i class="bi bi-arrow-right ms-2"></i>
+        <a href="{% url 'presentation_bibliotheque' %}" class="btn btn-light btn-lg">
+          Explorez notre Bibliothèque <i class="bi bi-arrow-right ms-2"></i>
         </a>
       </div>
     </section>
@@ -76,5 +76,8 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Footer -->
+  {% include '_footer.html' %}
 </body>
 </html>
